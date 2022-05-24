@@ -44,18 +44,18 @@ class Ui_editor_dialog(object):
         self.groupBox.setSizePolicy(sizePolicy1)
         self.verticalLayout = QVBoxLayout(self.groupBox)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.treeWidget = QTreeWidget(self.groupBox)
+        self.open_files = QTreeWidget(self.groupBox)
         __qtreewidgetitem = QTreeWidgetItem()
         __qtreewidgetitem.setText(0, u"1");
-        self.treeWidget.setHeaderItem(__qtreewidgetitem)
-        self.treeWidget.setObjectName(u"treeWidget")
+        self.open_files.setHeaderItem(__qtreewidgetitem)
+        self.open_files.setObjectName(u"open_files")
         sizePolicy2 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(1)
-        sizePolicy2.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
-        self.treeWidget.setSizePolicy(sizePolicy2)
+        sizePolicy2.setHeightForWidth(self.open_files.sizePolicy().hasHeightForWidth())
+        self.open_files.setSizePolicy(sizePolicy2)
 
-        self.verticalLayout.addWidget(self.treeWidget)
+        self.verticalLayout.addWidget(self.open_files)
 
         self.splitter.addWidget(self.groupBox)
         self.editor_tab = QTabWidget(self.splitter)
@@ -69,10 +69,10 @@ class Ui_editor_dialog(object):
 
         self.main_grid_layout.addWidget(self.splitter, 0, 0, 1, 1)
 
-        self.plainTextEdit = QPlainTextEdit(editor_dialog)
-        self.plainTextEdit.setObjectName(u"plainTextEdit")
+        self.output_window = QPlainTextEdit(editor_dialog)
+        self.output_window.setObjectName(u"output_window")
 
-        self.main_grid_layout.addWidget(self.plainTextEdit, 1, 0, 1, 1)
+        self.main_grid_layout.addWidget(self.output_window, 1, 0, 1, 1)
 
 
         self.retranslateUi(editor_dialog)

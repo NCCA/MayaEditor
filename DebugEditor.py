@@ -15,3 +15,6 @@ def editor():
     import MayaEditorCore
 
     MayaEditorCore.EditorDialog()
+
+
+editor()

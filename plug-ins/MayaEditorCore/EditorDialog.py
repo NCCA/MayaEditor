@@ -28,13 +28,10 @@ def get_main_window():
 class EditorDialog(QWidget):
     def __init__(self, parent=get_main_window()):
         """init the class and setup dialog"""
-        # Python 3 does inheritance differently to 2 so support both
-        # as Maya 2020 is still Python 2
-        if sys.version_info.major == 3:
-            super().__init__(parent)
-        # python 2
-        else:
-            super(EditorDialog, self).__init__(parent)
+        super().__init__(parent)
+        # This should work but crashes Maya2023 go figure!
+        # self.callback_id = OpenMaya.MCommandMessage.addCommandOutputFilterCallback(self.message_callback)
+
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         loader = QUiLoader()
         file = QFile(self.root_path + "/plug-ins/ui/form.ui")
@@ -47,12 +44,15 @@ class EditorDialog(QWidget):
         self.ui.show()
         self.installEventFilter(self)
 
-    def send_to_maya(self):
-        value = utils.executeInMainThreadWithResult()
-        # value = utils.executeDeferred(self.ui.python_editor.toPlainText())
+    def message_callback(self, message):
+        self.ui.output_window.append(message.strip())
+        pass
+
+    def closeEvent(self, event):
+        # OpenMaya.MMessage.removeCallback(self.callback_id)
+        pass
 
     def create_menu_bar(self):
-
         self.menu_bar = QMenuBar()
         file_menu = QMenu("&File")
         self.menu_bar.addMenu(file_menu)
@@ -60,6 +60,11 @@ class EditorDialog(QWidget):
         open_action = QAction("&Open", self)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
+
+        new_action = QAction("&New", self)
+        new_action.triggered.connect(self.new_file)
+        file_menu.addAction(new_action)
+
         self.ui.main_grid_layout.setMenuBar(self.menu_bar)
 
     def open_file(self):
@@ -73,6 +78,11 @@ class EditorDialog(QWidget):
 
             with open(file_name, "r") as code_file:
                 py_file = str(Path(file_name).name)
-                editor = PlainTextEdit(code_file.read())
+                editor = PlainTextEdit(code_file.read(), file_name)
                 # editor.installEventFilter(self)
                 self.ui.editor_tab.addTab(editor, py_file)
+
+    def new_file(self):
+        editor = PlainTextEdit("", "untitled.py")
+        # editor.installEventFilter(self)
+        self.ui.editor_tab.insertTab(0, editor, "untitled.py")
