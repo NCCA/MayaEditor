@@ -1,7 +1,7 @@
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import QFileDialog, QPlainTextEdit, QToolTip, QWidget
+from PySide2.QtWidgets import QFileDialog, QPlainTextEdit, QTextEdit, QToolTip, QWidget
 
 from .Highlighter import Highlighter
 
@@ -177,7 +177,7 @@ class PlainTextEdit(QPlainTextEdit):
 
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
-            lineColor = QColor(Qt.yellow).lighter(160)
+            lineColor = QColor(Qt.lightgray)
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()
