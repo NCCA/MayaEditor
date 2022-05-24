@@ -60,11 +60,6 @@ class EditorDialog(QWidget):
         open_action = QAction("&Open", self)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
-
-        # open_menu = QMenu("&Open", file_menu)
-        # open_action = QAction("&Open")
-        # open_action.triggered.connect(self.open_file)
-        # file_menu.addAction(open_action)
         self.ui.main_grid_layout.setMenuBar(self.menu_bar)
 
     def open_file(self):
@@ -81,18 +76,3 @@ class EditorDialog(QWidget):
                 editor = PlainTextEdit(code_file.read())
                 # editor.installEventFilter(self)
                 self.ui.editor_tab.addTab(editor, py_file)
-
-    # def eventFilter(self, obj, event):
-    #     if isinstance(obj, PlainTextEdit):
-    #         if event.type() == QEvent.KeyPress:
-    #             print(f"keypress {event.modifiers()=}")
-    #             if (
-    #                 event.key() == Qt.Key_Enter
-    #                 and event.modifiers() == Qt.ControlModifier
-    #             ):
-    #                 print("ALT + ENTER")
-    #                 return False
-    #             else:
-    #                 return True
-    #     else:
-    #         return True
