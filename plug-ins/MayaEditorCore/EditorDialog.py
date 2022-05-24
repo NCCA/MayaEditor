@@ -84,5 +84,4 @@ class EditorDialog(QWidget):
 
     def new_file(self):
         editor = PlainTextEdit("", "untitled.py")
-        # editor.installEventFilter(self)
         self.ui.editor_tab.insertTab(0, editor, "untitled.py")

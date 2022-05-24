@@ -24,9 +24,14 @@ class Ui_editor_dialog(object):
     def setupUi(self, editor_dialog):
         if not editor_dialog.objectName():
             editor_dialog.setObjectName(u"editor_dialog")
-        editor_dialog.resize(818, 537)
+        editor_dialog.resize(995, 705)
         self.main_grid_layout = QGridLayout(editor_dialog)
         self.main_grid_layout.setObjectName(u"main_grid_layout")
+        self.output_window = QPlainTextEdit(editor_dialog)
+        self.output_window.setObjectName(u"output_window")
+
+        self.main_grid_layout.addWidget(self.output_window, 1, 0, 1, 1)
+
         self.splitter = QSplitter(editor_dialog)
         self.splitter.setObjectName(u"splitter")
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -68,11 +73,6 @@ class Ui_editor_dialog(object):
         self.splitter.addWidget(self.editor_tab)
 
         self.main_grid_layout.addWidget(self.splitter, 0, 0, 1, 1)
-
-        self.output_window = QPlainTextEdit(editor_dialog)
-        self.output_window.setObjectName(u"output_window")
-
-        self.main_grid_layout.addWidget(self.output_window, 1, 0, 1, 1)
 
 
         self.retranslateUi(editor_dialog)

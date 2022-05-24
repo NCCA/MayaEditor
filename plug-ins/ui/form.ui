@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>818</width>
-    <height>537</height>
+    <width>995</width>
+    <height>705</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>NCCA Editor</string>
   </property>
   <layout class="QGridLayout" name="main_grid_layout">
+   <item row="1" column="0">
+    <widget class="QPlainTextEdit" name="output_window"/>
+   </item>
    <item row="0" column="0">
     <widget class="QSplitter" name="splitter">
      <property name="sizePolicy">
@@ -65,9 +68,6 @@
       </property>
      </widget>
     </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QPlainTextEdit" name="output_window"/>
    </item>
   </layout>
  </widget>
