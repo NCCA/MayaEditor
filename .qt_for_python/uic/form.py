@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDialog, QGridLayout, QGroupBox,
-    QHeaderView, QPlainTextEdit, QSizePolicy, QSplitter,
-    QTabWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QGridLayout,
+    QGroupBox, QHeaderView, QPlainTextEdit, QSizePolicy,
+    QSplitter, QTabWidget, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_editor_dialog(object):
     def setupUi(self, editor_dialog):
@@ -30,7 +30,7 @@ class Ui_editor_dialog(object):
         self.output_window = QPlainTextEdit(editor_dialog)
         self.output_window.setObjectName(u"output_window")
 
-        self.main_grid_layout.addWidget(self.output_window, 1, 0, 1, 1)
+        self.main_grid_layout.addWidget(self.output_window, 2, 0, 1, 1)
 
         self.splitter = QSplitter(editor_dialog)
         self.splitter.setObjectName(u"splitter")
@@ -70,9 +70,23 @@ class Ui_editor_dialog(object):
         sizePolicy3.setVerticalStretch(1)
         sizePolicy3.setHeightForWidth(self.editor_tab.sizePolicy().hasHeightForWidth())
         self.editor_tab.setSizePolicy(sizePolicy3)
+        self.editor_tab.setDocumentMode(True)
+        self.editor_tab.setTabsClosable(True)
+        self.editor_tab.setMovable(True)
         self.splitter.addWidget(self.editor_tab)
 
-        self.main_grid_layout.addWidget(self.splitter, 0, 0, 1, 1)
+        self.main_grid_layout.addWidget(self.splitter, 1, 0, 1, 1)
+
+        self.dock_widget = QDockWidget(editor_dialog)
+        self.dock_widget.setObjectName(u"dock_widget")
+        self.dock_widget.setFloating(False)
+        self.dock_widget.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable)
+        self.dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.dock_widget.setWidget(self.dockWidgetContents)
+
+        self.main_grid_layout.addWidget(self.dock_widget, 0, 0, 1, 1)
 
 
         self.retranslateUi(editor_dialog)
@@ -86,5 +100,6 @@ class Ui_editor_dialog(object):
     def retranslateUi(self, editor_dialog):
         editor_dialog.setWindowTitle(QCoreApplication.translate("editor_dialog", u"NCCA Editor", None))
         self.groupBox.setTitle(QCoreApplication.translate("editor_dialog", u"Files", None))
+        self.dock_widget.setWindowTitle(QCoreApplication.translate("editor_dialog", u"Script Controls", None))
     # retranslateUi
 

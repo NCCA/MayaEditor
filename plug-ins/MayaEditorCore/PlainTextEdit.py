@@ -32,7 +32,6 @@ class PlainTextEdit(QPlainTextEdit):
         self.lineNumberArea = LineNumberArea(self)
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.filename = filename
-        self.needs_saving = False
         self.setPlainText(code)
         self.highlighter = Highlighter()
         self.highlighter.setDocument(self.document())
@@ -51,6 +50,9 @@ class PlainTextEdit(QPlainTextEdit):
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
         self.cursorPositionChanged.connect(self.highlight_current_line)
+        self.needs_saving = False
+        # hack as textChanged signal always called on set of text
+        self.first_edit = False
 
     def set_editor_fonts(self, font):
         """allow the editor to change fonts"""
@@ -65,9 +67,18 @@ class PlainTextEdit(QPlainTextEdit):
         self.execute_selected = state
 
     def text_changed(self):
-        self.needs_saving = True
+        """When the initial text is set this signal is executed so add
+        logic to ensure needs saving only gets set on 2nd call and beyond"""
+        if self.first_edit == False:
+            self.first_edit = True
+        else:
+            self.needs_saving = True
 
     def eventFilter(self, obj, event):
+        """
+        Filter events for the text editor, at present only CTRL +s for save
+        and CTRL + Return for run are used
+        """
         if isinstance(obj, PlainTextEdit):
             if event.type() == QEvent.KeyPress:
                 if (
@@ -98,6 +109,7 @@ class PlainTextEdit(QPlainTextEdit):
             value = utils.executeInMainThreadWithResult(self.toPlainText())
 
     def save_file(self):
+        """save the file, return True is saveed else False to flag cancel was selected"""
         # if file is called untitled.py it needs saving as
         if self.filename == "untitled.py":
             filename, _ = QFileDialog.getSaveFileName(
@@ -107,13 +119,14 @@ class PlainTextEdit(QPlainTextEdit):
                 ("Python (*.py)"),
             )
             if filename is None:
-                return
+                return False
             else:
                 self.filename = filename
-
+        # Now we have a filename save
         with open(self.filename, "w") as code_file:
             code_file.write(self.toPlainText())
-            self.needs_saving = False
+        self.needs_saving = False
+        return True
 
     def line_number_area_width(self):
         digits = 1
@@ -177,7 +190,7 @@ class PlainTextEdit(QPlainTextEdit):
 
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
-            lineColor = QColor(Qt.lightgray)
+            lineColor = QColor(45, 45, 45)
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()
