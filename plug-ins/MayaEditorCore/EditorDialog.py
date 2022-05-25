@@ -46,7 +46,7 @@ class EditorDialog(QDialog):
         """init the class and setup dialog"""
         super().__init__(parent)
         # This should work but crashes Maya2023 go figure!
-        # self.callback_id = OpenMaya.MCommandMessage.addCommandOutputFilterCallback(self.message_callback)
+        # self.callback_id = OpenMaya.MCommandMessage.addCommandOutputFilterCallback( self.message_callback  )
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         # loader = QUiLoader()
@@ -183,7 +183,14 @@ class EditorDialog(QDialog):
                 pass
 
     def new_workspace(self):
-        pass
+        # first create new workspace then clear current one
+        if self.workspace.is_saved is not True:
+            self.save_workspace()
+        else:
+            tab = self.editor_tab
+            for t in range(0, tab.count() + 1):
+                tab.removeTab(t)
+            self.workspace.new()
 
     def save_workspace(self):
         file_name, _ = QFileDialog.getSaveFileName(
