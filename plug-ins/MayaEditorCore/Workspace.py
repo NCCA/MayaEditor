@@ -24,4 +24,3 @@ class Workspace:
             workspace = json.load(workspace_file)
             self.name = workspace["name"]
             self.files = workspace["files"]
-        print(f"{self.name} {self.files}")

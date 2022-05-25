@@ -105,7 +105,6 @@ class Highlighter(QSyntaxHighlighter):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        print("Building Highligter")
         self.styles = {
             "keyword": _create_format("DeepSkyBlue"),
             "operator": _create_format("DeepPink "),
