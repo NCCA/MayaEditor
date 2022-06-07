@@ -1,8 +1,10 @@
 import importlib
 import sys
 
+import maya.cmds as cmds
 
-def editor():
+
+def editor() -> None:
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
     sys.path.insert(0, root_path + "/plug-ins")
     if "MayaEditorCore.EditorDialog" in sys.modules.keys():

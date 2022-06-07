@@ -1,3 +1,5 @@
+from typing import Any
+
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -25,11 +27,14 @@ class PlainTextEdit(QPlainTextEdit):
     ToolTip event and create custom ones from us.
     """
 
+    parent: Any
+    line_number_area: LineNumberArea
+
     def __init__(self, code, filename, parent=None):
         super().__init__(parent)
         # self.setMouseTracking(True)
         self.parent = parent
-        self.lineNumberArea = LineNumberArea(self)
+        self.line_number_area = LineNumberArea(self)
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.filename = filename
         self.setPlainText(code)
@@ -79,21 +84,15 @@ class PlainTextEdit(QPlainTextEdit):
         Filter events for the text editor, at present only CTRL +s for save
         and CTRL + Return for run are used
         """
-        if isinstance(obj, PlainTextEdit):
-            if event.type() == QEvent.KeyPress:
-                if (
-                    event.key() == Qt.Key_Return
-                    and event.modifiers() == Qt.ControlModifier
-                ):
-                    self.execute_code()
-                    return True
-                elif (
-                    event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier
-                ):
-                    self.save_file()
-                    return True
-                else:
-                    return False
+        if isinstance(obj, PlainTextEdit) and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Return and event.modifiers() == Qt.ControlModifier:
+                self.execute_code()
+                return True
+            elif event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
+                self.save_file()
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -143,10 +142,10 @@ class PlainTextEdit(QPlainTextEdit):
     def update_line_number_area(self, rect, dy):
 
         if dy:
-            self.lineNumberArea.scroll(0, dy)
+            self.line_number_area.scroll(0, dy)
         else:
-            self.lineNumberArea.update(
-                0, rect.y(), self.lineNumberArea.width(), rect.height()
+            self.line_number_area.update(
+                0, rect.y(), self.line_number_area.width(), rect.height()
             )
 
         if rect.contains(self.viewport().rect()):
@@ -156,12 +155,12 @@ class PlainTextEdit(QPlainTextEdit):
         super().resizeEvent(event)
 
         cr = self.contentsRect()
-        self.lineNumberArea.setGeometry(
+        self.line_number_area.setGeometry(
             QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
         )
 
     def lineNumberAreaPaintEvent(self, event):
-        mypainter = QPainter(self.lineNumberArea)
+        mypainter = QPainter(self.line_number_area)
         mypainter.setFont(self.font())
         mypainter.fillRect(event.rect(), QColor(43, 43, 43))
 
@@ -177,7 +176,7 @@ class PlainTextEdit(QPlainTextEdit):
                 number = str(blockNumber + 1) + " "
                 mypainter.setPen(Qt.yellow)
                 mypainter.drawText(
-                    0, top, self.lineNumberArea.width(), height, Qt.AlignRight, number
+                    0, top, self.line_number_area.width(), height, Qt.AlignRight, number
                 )
 
             block = block.next()

@@ -1,5 +1,6 @@
 import re
 import sys
+from typing import Any, Dict
 
 import maya.cmds as cmds
 from PySide2.QtCore import QRegExp, Qt
@@ -7,14 +8,15 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
 
-def _create_format(style_colour, style=""):
+def _create_format(style_colour: str, style: str = "") -> QTextCharFormat:
     colour = QColor()
     colour.setNamedColor(style_colour)
 
     new_format = QTextCharFormat()
-    new_format.setForeground(colour)
+    new_format.setForeground(QBrush(colour))
     if "bold" in style:
-        new_format.setFontWeight(QFont.Bold)
+        new_format.setFontWeight(QFont.Bold)  # type: ignore
+        print(f"Weight {QFont.Bold=}")
     if "italic" in style:
         new_format.setFontItalic(True)
 
@@ -22,84 +24,29 @@ def _create_format(style_colour, style=""):
 
 
 class Highlighter(QSyntaxHighlighter):
+    # fmt: off
     # Python keywords
-    keywords = [
-        "and",
-        "assert",
-        "break",
-        "class",
-        "continue",
-        "def",
-        "del",
-        "elif",
-        "else",
-        "except",
-        "exec",
-        "finally",
-        "for",
-        "from",
-        "global",
-        "if",
-        "import",
-        "in",
-        "is",
-        "lambda",
-        "not",
-        "or",
-        "pass",
-        "print",
-        "raise",
-        "return",
-        "try",
-        "while",
-        "yield",
-        "None",
-        "True",
-        "False",
-    ]
+    keywords = ["and","assert","break","class","continue","def",
+        "del","elif","else","except","exec","finally","for","from",
+        "global","if","import","in","is","lambda","not","or","pass",
+        "print","raise","return","try","while","yield","None",
+        "True","False"]
 
     # Python operators
     operators = [
         "=",
         # Comparison
-        "==",
-        "!=",
-        "<",
-        "<=",
-        "[^>]>",
-        ">=",
+        "==","!=","<","<=","[^>]>",">=",
         # Arithmetic
-        "\+",
-        "-",
-        "\*",
-        "/",
-        "//",
-        "\%",
-        "\*\*",
-        # In-place
-        "\+=",
-        "-=",
-        "\*=",
-        "/=",
-        "\%=",
+        "\+","-","\*","/","//", "\%","\*\*",
+        # In-place 
+        "\+=","-=","\*=","/=","\%=",
         # Bitwise
-        "\^",
-        "\|",
-        "\&",
-        "\~",
-        "[^>]>>",
-        "<<",
-    ]
+        "\^", "\|","\&","\~","[^>]>>","<<"]
 
     # Python braces
-    braces = [
-        "\{",
-        "\}",
-        "\(",
-        "\)",
-        "\[",
-        "\]",
-    ]
+    braces = ["\{","\}","\(","\)","\[","\]"] 
+    # fmt: on
 
     mayaCmds = cmds.help("[a-z]*", list=True, lng="Python")
 
@@ -159,21 +106,22 @@ class Highlighter(QSyntaxHighlighter):
         # Build a qt.QRegExp for each pattern
         self.rules = [(QRegExp(pat), index, fmt) for (pat, index, fmt) in rules]
 
-    def highlightBlock(self, textBlock):
-        """Apply syntax highlighting to the given block of text."""
-        data = self.currentBlockUserData()
-        if data:
-            try:
-                if data["type"] == TextBlock.TYPE_MESSAGE:
-                    self.setFormat(0, len(textBlock), _create_format("grey"))
-                    return
-                if data["type"] == TextBlock.TYPE_OUTPUT_MSG:
-                    self.setFormat(0, len(textBlock), _create_format("red"))
-                    return
-                if data["type"] not in TextBlock.CODE_TYPES:
-                    return
-            except:
-                pass
+    def highlightBlock(self, textBlock: str) -> None:
+        # """Apply syntax highlighting to the given block of text."""
+        # data: Dict[str, Any] = self.currentBlockUserData()  # type: ignore
+        # if data:
+        #     try:
+        #         if data["type"] == TextBlock.TYPE_MESSAGE:
+        #             self.setFormat(0, len(textBlock), _create_format("grey"))
+        #             return
+        #         if data["type"] == TextBlock.TYPE_OUTPUT_MSG:
+        #             self.setFormat(0, len(textBlock), _create_format("red"))
+        #             return
+        #         if data["type"] not in TextBlock.CODE_TYPES:
+        #             return
+        #     except:
+        #         print("exception happened highlight")
+        #         pass
 
         # Do other syntax syFormatting
         for expr, nth, syFormat in self.rules:
@@ -194,7 +142,7 @@ class Highlighter(QSyntaxHighlighter):
         if not in_multiline:
             in_multiline = self.match_multiline(textBlock, *self.tri_double)
 
-    def match_multiline(self, textBlock, delimiter, in_state, style):
+    def match_multiline(self, textBlock: str, delimiter: QRegExp, in_state, style):
         """Do highlighting of multi-line strings. ``delimiter`` should be a
         ``qt.QRegExp`` for triple-single-quotes or triple-double-quotes, and
         ``in_state`` should be a unique integer to represent the corresponding
@@ -222,7 +170,7 @@ class Highlighter(QSyntaxHighlighter):
             # No; multi-line string
             else:
                 self.setCurrentBlockState(in_state)
-                length = textBlock.length() - start + add
+                length = len(textBlock) - start + add
             # Apply syFormatting
             self.setFormat(start, length, style)
             # Look for the next match

@@ -10,7 +10,7 @@ from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtGui import QColor, QFont
 from PySide2.QtUiTools import QUiLoader
-from shiboken2 import wrapInstance
+from shiboken2 import wrapInstance  # type: ignore
 
 # Grab the module root so we can append our python path
 root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
@@ -32,7 +32,7 @@ except ImportError:
     raise
 
 
-def maya_useNewAPI():
+def maya_useNewAPI() -> None:
     """
     Can either use this function (which works on earlier versions)
     or we can set maya_useNewAPI = True
@@ -40,7 +40,7 @@ def maya_useNewAPI():
     pass
 
 
-maya_useNewAPI = True
+maya_useNewAPI = True  # type: ignore
 
 
 class MayaEditor(OpenMaya.MPxCommand):
