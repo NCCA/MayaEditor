@@ -1,5 +1,6 @@
+"""PlainTextEdit and related classes this Class extends the QPlainTextEdit."""
 import importlib.util
-from typing import Any
+from typing import Any, Callable, Optional, Type
 
 import jedi
 from maya import utils
@@ -12,31 +13,48 @@ from .Highlighter import Highlighter
 
 # Based on the Qt Editor Demo
 class LineNumberArea(QWidget):
+    """Simple LineNumberArea class to render line numbers at the side of our editor."""
+
     def __init__(self, editor):
+        """Create a new LineNumberArea for our Editor.
+
+        Parameters :
+        editor (PlainTextEdit) : The editor to add line numbers to
+        """
         super().__init__(editor)
-        self.codeEditor = editor
+        self.code_editor = editor
 
-    def sizeHint(self):
-        return QSize(self.editor.line_number_area_width(), 0)
+    def sizeHint(self) -> QSize:
+        """Get the current size of the area.
 
-    def paintEvent(self, event):
-        self.codeEditor.lineNumberAreaPaintEvent(event)
+        Returns (QSize) : the sizeHint for the area
+        """
+        return QSize(self.code_editor.line_number_area_width(), 0)
+
+    def paintEvent(self, event: QEvent) -> None:
+        """Override the paint event to allow number drawing."""
+        self.code_editor.lineNumberAreaPaintEvent(event)
 
 
 class PlainTextEdit(QPlainTextEdit):
-    """
-    Need to override the simple QPlainTextEdit so we can capture the
-    ToolTip event and create custom ones from us.
+    """Custom QPlainTextEdit.
+
+    Custom QPlainTextEdit to allow us to add extra code editor features such as
+    shortcuts zooms and line numbers
     """
 
-    parent: Any
-    line_number_area: LineNumberArea
+    def __init__(self, code: str, filename: str, parent: Optional[Any] = None):
+        """
+        Construct our PlainTextEdit.
 
-    def __init__(self, code, filename, parent=None):
+        Parameters:
+        code (str): The source code for the editor.
+        filename (str) : The name of the source file used by the tab.
+        parent (QObject) : parent widget.
+        """
         super().__init__(parent)
-        # self.setMouseTracking(True)
-        self.parent = parent
-        self.line_number_area = LineNumberArea(self)
+        self.parent: Callable[[QObject], QObject] = parent
+        self.line_number_area: LineNumberArea = LineNumberArea(self)
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.filename = filename
         self.setPlainText(code)
@@ -63,7 +81,7 @@ class PlainTextEdit(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
 
     def set_editor_fonts(self, font):
-        """allow the editor to change fonts"""
+        """Allow the editor to change fonts."""
         metrics = QFontMetrics(font)
         self.setTabStopDistance(
             QFontMetricsF(self.font()).horizontalAdvance(" ") * self.tab_size
@@ -72,20 +90,37 @@ class PlainTextEdit(QPlainTextEdit):
         self.setFont(font)
 
     def selection_changed(self, state):
+        """Signal called when text is selected.
+
+        This is used to set the flag in the editor so if we have selected code we
+        only execute that rather than the whole file.
+        """
         self.execute_selected = state
 
     def text_changed(self):
-        """When the initial text is set this signal is executed so add
-        logic to ensure needs saving only gets set on 2nd call and beyond"""
+        """Signal called when text changed.
+
+        When the initial text is set this signal is executed so add
+        logic to ensure needs saving only gets set on 2nd call and beyond.
+        """
         if self.first_edit == False:
             self.first_edit = True
         else:
             self.needs_saving = True
 
-    def eventFilter(self, obj, event):
-        """
-        Filter events for the text editor, at present only CTRL +s for save
-        and CTRL + Return for run are used
+    def eventFilter(self, obj: QObject, event: QEvent):
+        """Event filter for key events.
+
+        We filter different keyboard combinations for shortcuts here at present.
+        Ctrl (Command mac) + Return : execute code.
+        Ctrl (Command mac) + S : save file.
+        Ctrl (Command mac) + + or = : zoom in.
+        Ctrl (Command mac) - : zoom out.
+        Parameters :
+        obj (QObject) : the object passing the event.
+        event (QEvent) : the event to be processed.
+        Returns : True on processed or False to pass to next event filter.
+
         """
         if isinstance(obj, PlainTextEdit) and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Return and event.modifiers() == Qt.ControlModifier:
@@ -94,14 +129,31 @@ class PlainTextEdit(QPlainTextEdit):
             elif event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
                 self.save_file()
                 return True
+            elif (
+                event.key() in (Qt.Key_Plus, Qt.Key_Equal)
+                and event.modifiers() == Qt.ControlModifier
+            ):
+                obj.zoomIn(1)
+                return True
+            elif (
+                event.key() == Qt.Key_Minus and event.modifiers() == Qt.ControlModifier
+            ):
+                obj.zoomOut(1)
+                return True
             else:
                 return False
         else:
             return False
 
     def event(self, event):
-        """going to re-implement the event for tool tips then
-        pass on to parent if not a tool tip
+        """Process the events directly passed to the editor.
+
+        This is mainly used for toolTips and Wheel events at present but may be
+        used for more in the future.
+
+        Parameters :
+        event (QEvent) : the event to be processed.
+        Returns :  True is event is processed here else False to pass on.
         """
         if event.type() is QEvent.ToolTip:
             self.process_tooltip(event)
@@ -117,6 +169,12 @@ class PlainTextEdit(QPlainTextEdit):
             return QPlainTextEdit.event(self, event)
 
     def process_tooltip(self, event):
+        """Process the tooltip event.
+
+        Called from the event filter and is used to generate code hints
+        Parameters :
+        event (QEvent) : the toolTip event.
+        """
         # Grab the help event and get the position
         jedi_data = jedi.Script(self.toPlainText())
         help_event = event
@@ -143,6 +201,11 @@ class PlainTextEdit(QPlainTextEdit):
             QToolTip.showText(help_event.globalPos(), help_text)
 
     def execute_code(self):
+        """Execute the code in the current Editor.
+
+        This will either execute the selected text or the whole file dependant upon
+        the execute_selected flag. Called from the event filter on CTR + Return.
+        """
         if self.execute_selected:
             cursor = self.textCursor()
             text = cursor.selectedText()
@@ -154,8 +217,13 @@ class PlainTextEdit(QPlainTextEdit):
             value = utils.executeInMainThreadWithResult(self.toPlainText())
 
     def save_file(self):
-        """save the file, return True is saveed else False to flag cancel was selected"""
-        # if file is called untitled.py it needs saving as
+        """Save the current editor file.
+
+        This is called from the event filter or menu when the file is to be saved.
+        It will check to see if the file is called untitled.py if so this will be an unsaved file so will popup a file save dialog, if this is canceled False will be returned else true for a saved file.
+
+        Returns : True if saved else False to flag cancel was selected.
+        """
         if self.filename == "untitled.py":
             filename, _ = QFileDialog.getSaveFileName(
                 self,
@@ -174,6 +242,12 @@ class PlainTextEdit(QPlainTextEdit):
         return True
 
     def line_number_area_width(self):
+        """Get the size of the line area.
+
+        This calculates the line area size based on Font metrics.
+
+        Returns : size of the space needed for line area.
+        """
         digits = 1
         count = max(1, self.blockCount())
         while count >= 10:
@@ -183,10 +257,11 @@ class PlainTextEdit(QPlainTextEdit):
         return space
 
     def update_line_number_area_width(self, _):
+        """Update the line area width."""
         self.setViewportMargins(self.line_number_area_width(), 0, 0, 0)
 
     def update_line_number_area(self, rect, dy):
-
+        """Update the Line area numbers."""
         if dy:
             self.line_number_area.scroll(0, dy)
         else:
@@ -198,6 +273,7 @@ class PlainTextEdit(QPlainTextEdit):
             self.update_line_number_area_width(0)
 
     def resizeEvent(self, event):
+        """Event called on editor resize."""
         super().resizeEvent(event)
 
         cr = self.contentsRect()
@@ -206,6 +282,7 @@ class PlainTextEdit(QPlainTextEdit):
         )
 
     def lineNumberAreaPaintEvent(self, event):
+        """Paint Event for the line number area."""
         mypainter = QPainter(self.line_number_area)
         mypainter.setFont(self.font())
         mypainter.fillRect(event.rect(), QColor(43, 43, 43))
@@ -231,8 +308,8 @@ class PlainTextEdit(QPlainTextEdit):
             blockNumber += 1
 
     def highlight_current_line(self):
+        """Highlight the current line."""
         extraSelections = []
-
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
             lineColor = QColor(45, 45, 45)

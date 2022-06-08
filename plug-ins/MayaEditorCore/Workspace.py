@@ -1,3 +1,7 @@
+"""Workspace module for the NCCA Maya Editor.
+
+Contains all the code an functions for creating, reading and writing workspace data.
+"""
 import json
 from typing import List
 
@@ -6,17 +10,35 @@ from PySide2.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 
 class Workspace:
+    """Class to manage workspaces in editor."""
+
     def __init__(self):
+        """Workspace class to hold the data about the current workspaces."""
         self.workspace_name: str = ""
         self.files: List[str] = []
         self.is_saved: bool = True
         self.file_name: str = ""
 
     def add_file(self, file: str) -> None:
+        """Add a file to the workspace.
+
+        Add a new file to the Workspace at present this is the full path.
+
+        Parameters :
+        file (str) : the full path to the file to be saved.
+        """
         self.files.append(file)
         self.is_saved = False
 
     def save(self, filename: str) -> None:
+        """Save the workspace.
+
+        The workspace is saved using a json format for ease, we don't need the full dictionary so we create what we need. We also save an internal state
+        each time we save so we can check when re-loading the workspace.
+
+        Parameters :
+        filename (str) : the full path to save the workspace to
+        """
         workspace = {}
         workspace["name"] = self.workspace_name
         workspace["files"] = self.files  # type: ignore
@@ -26,6 +48,12 @@ class Workspace:
         self.is_saved = True
 
     def load(self, filename: str) -> None:
+        """Load in a new workspace.
+
+        This loads in a new workspace no check on overwrite are done
+        Parameters :
+        filename (str) : the full path to workspace to load
+        """
         self.files.clear()
         try:
             with open(filename, "r") as workspace_file:
@@ -37,6 +65,10 @@ class Workspace:
             print("problem loading last workspace")
 
     def new(self) -> None:
+        """Create a new workspace.
+
+        We check to ensure that the current workspace has been saved before loading a new one.
+        """
         if self.is_saved is not True:
             msg_box = QMessageBox()
             msg_box.setWindowTitle("Warning!")
