@@ -333,21 +333,27 @@ class PlainTextEdit(QPlainTextEdit):
             extraSelections.append(selection)
         self.setExtraSelections(extraSelections)
 
-    def goto_line(self) -> None:
+    def goto_line(self, line_number: int = 0) -> None:
         """Goto the line entered from the dialog.
 
-        Would be nice to make this a bit like
+        If line_number is 0 popup a dialog else use line this allows
+        this method to be used from outside (via the toolbar)
+        Parameters :
+        line_number (int) : the line to goto, default zero will prompt for value
         """
-        cursor = self.textCursor()
-        line_number, ok = QInputDialog.getInt(
-            self,
-            "Goto Line",
-            "line",
-            cursor.blockNumber() + 1,
-            1,
-            self.blockCount() + 1,
-            Qt.Tool,
-        )
-        if ok:
-            cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
-            self.setTextCursor(cursor)
+        if line_number == 0:
+            cursor = self.textCursor()
+            line_number, ok = QInputDialog.getInt(
+                self,
+                "Goto Line",
+                "line",
+                cursor.blockNumber() + 1,
+                1,
+                self.blockCount() + 1,
+                Qt.Tool,
+            )
+            if not ok:  # cancelled
+                return
+
+        cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
+        self.setTextCursor(cursor)

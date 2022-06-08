@@ -256,7 +256,29 @@ class EditorDialog(QDialog):
                 item = QTreeWidgetItem(self.open_files)  # type: ignore
                 item.setText(0, py_file)
                 self.open_files.addTopLevelItem(item)  # type: ignore
+                self.tool_bar.add_to_active_file_list(py_file)
 
-    @Slot(None)
+    @Slot()
     def tool_bar_run_clicked(self):
-        index = self.editor_tab.currentWidget().execute_code()
+        """Slot used by the Toolbar run button."""
+        self.editor_tab.currentWidget().execute_code()
+
+    @Slot(int)
+    def tool_bar_goto_changed(self, line: int):
+        """Slot used by the Toolbar goto dial."""
+        # Note we subtract 1 as the line is defaulting to the correct range
+        self.editor_tab.currentWidget().goto_line(line - 1)
+
+    @Slot()
+    def tool_bar_run_project_clicked(self):
+        """Slot called when run project clicked."""
+        pass
+        file_to_run = self.tool_bar.active_project_file.currentText()
+        # first find the index of the active tab
+        tab = self.editor_tab  # type: ignore
+        index = 0
+        for t in range(0, tab.count() + 1):
+            if file_to_run == tab.tabText(t):
+                index = t
+                break
+        self.editor_tab.widget(index).execute_code()
