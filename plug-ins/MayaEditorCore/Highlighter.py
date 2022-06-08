@@ -1,3 +1,7 @@
+"""Custom Highlighter for Python.
+
+This will 
+"""
 import re
 import sys
 from typing import Any, Dict

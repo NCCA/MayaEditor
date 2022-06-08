@@ -13,7 +13,7 @@ def editor() -> None:
         del sys.modules["MayaEditorCore.PlainTextEdit"]
         del sys.modules["MayaEditorCore.Highlighter"]
         del sys.modules["MayaEditorCore.Workspace"]
-
+        del sys.modules["MayaEditorCore.EditorToolBar"]
         print("deleting and reloading module")
     import MayaEditorCore
 

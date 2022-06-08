@@ -6,7 +6,15 @@ import jedi
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import QFileDialog, QPlainTextEdit, QTextEdit, QToolTip, QWidget
+from PySide2.QtWidgets import (
+    QFileDialog,
+    QInputDialog,
+    QLineEdit,
+    QPlainTextEdit,
+    QTextEdit,
+    QToolTip,
+    QWidget,
+)
 
 from .Highlighter import Highlighter
 
@@ -79,6 +87,7 @@ class PlainTextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        # Add some extra controls to this widget
 
     def set_editor_fonts(self, font):
         """Allow the editor to change fonts."""
@@ -115,7 +124,8 @@ class PlainTextEdit(QPlainTextEdit):
         Ctrl (Command mac) + Return : execute code.
         Ctrl (Command mac) + S : save file.
         Ctrl (Command mac) + + or = : zoom in.
-        Ctrl (Command mac) - : zoom out.
+        Ctrl (Command mac) + - : zoom out.
+        Ctrl (Command mac) + G : goto line
         Parameters :
         obj (QObject) : the object passing the event.
         event (QEvent) : the event to be processed.
@@ -139,6 +149,9 @@ class PlainTextEdit(QPlainTextEdit):
                 event.key() == Qt.Key_Minus and event.modifiers() == Qt.ControlModifier
             ):
                 obj.zoomOut(1)
+                return True
+            elif event.key() == Qt.Key_G and event.modifiers() == Qt.ControlModifier:
+                self.goto_line()
                 return True
             else:
                 return False
@@ -319,3 +332,22 @@ class PlainTextEdit(QPlainTextEdit):
             selection.cursor.clearSelection()
             extraSelections.append(selection)
         self.setExtraSelections(extraSelections)
+
+    def goto_line(self) -> None:
+        """Goto the line entered from the dialog.
+
+        Would be nice to make this a bit like
+        """
+        cursor = self.textCursor()
+        line_number, ok = QInputDialog.getInt(
+            self,
+            "Goto Line",
+            "line",
+            cursor.blockNumber() + 1,
+            1,
+            self.blockCount() + 1,
+            Qt.Tool,
+        )
+        if ok:
+            cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
+            self.setTextCursor(cursor)

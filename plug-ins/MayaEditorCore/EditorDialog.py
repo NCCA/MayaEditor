@@ -23,6 +23,7 @@ from PySide2.QtWidgets import *
 from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
+from .EditorToolBar import EditorToolBar
 from .Highlighter import Highlighter
 from .PlainTextEdit import PlainTextEdit
 from .Workspace import Workspace
@@ -156,11 +157,7 @@ class EditorDialog(QDialog):
 
     def create_tool_bar(self) -> None:
         """Create the toolbar."""
-        self.tool_bar = QToolBar(self)
-        self.tool_bar.setFloatable(True)
-        self.tool_bar.setMovable(True)
-        run_button = QPushButton("Run")
-        self.tool_bar.addWidget(run_button)
+        self.tool_bar = EditorToolBar(self)  # QToolBar(self)
         # Add to main dialog
         self.dock_widget.setWidget(self.tool_bar)  # type: ignore
 
@@ -259,3 +256,7 @@ class EditorDialog(QDialog):
                 item = QTreeWidgetItem(self.open_files)  # type: ignore
                 item.setText(0, py_file)
                 self.open_files.addTopLevelItem(item)  # type: ignore
+
+    @Slot(None)
+    def tool_bar_run_clicked(self):
+        index = self.editor_tab.currentWidget().execute_code()
