@@ -23,6 +23,18 @@ def _create_format(style_colour: str, style: str = "") -> QTextCharFormat:
     return new_format
 
 
+def _create_format_rgb(style_colour: QColor, style: str = "") -> QTextCharFormat:
+    new_format = QTextCharFormat()
+    new_format.setForeground(QBrush(style_colour))
+    if "bold" in style:
+        new_format.setFontWeight(QFont.Bold)  # type: ignore
+        print(f"Weight {QFont.Bold=}")
+    if "italic" in style:
+        new_format.setFontItalic(True)
+
+    return new_format
+
+
 class Highlighter(QSyntaxHighlighter):
     # fmt: off
     # Python keywords
@@ -53,14 +65,15 @@ class Highlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.styles = {
-            "keyword": _create_format("DeepSkyBlue"),
-            "operator": _create_format("DeepPink "),
+            "keyword": _create_format_rgb(QColor(255, 166, 87)),
+            "operator": _create_format_rgb(QColor(255, 166, 87)),
             "brace": _create_format("darkGray"),
-            "defclass": _create_format("MistyRose"),
-            "string": _create_format("red"),
-            "string2": _create_format("yellow"),
-            "comment": _create_format("Gray"),
-            "self": _create_format("Plum"),
+            "defclass": _create_format_rgb(QColor(255, 166, 87)),
+            "deffunc": _create_format_rgb(QColor(121, 192, 234)),
+            "string": _create_format_rgb(QColor(165, 214, 255)),
+            "string2": _create_format_rgb(QColor(165, 214, 255)),  # "yellow"),
+            "comment": _create_format_rgb("Gray"),
+            "self": _create_format_rgb(QColor(121, 192, 255)),
             "numbers": _create_format("GhostWhite"),
             "maya": _create_format("SpringGreen"),
         }
@@ -72,8 +85,7 @@ class Highlighter(QSyntaxHighlighter):
         rules += [
             (r"\b%s\b" % w, 0, self.styles["keyword"]) for w in Highlighter.keywords
         ]
-        # rules += [(r'.%s.' % w, 0, self.styles['maya'])
-        #          for w in PythonHighlighter.mayaCmds]
+
         rules += [
             (r"%s" % o, 0, self.styles["operator"]) for o in Highlighter.operators
         ]
@@ -88,7 +100,7 @@ class Highlighter(QSyntaxHighlighter):
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles["string"]),
             # 'def' followed by an identifier
-            (r"\bdef\b\s*(\w+)", 1, self.styles["defclass"]),
+            (r"\bdef\b\s*(\w+)", 1, self.styles["deffunc"]),
             # 'class' followed by an identifier
             (r"\bclass\b\s*(\w+)", 1, self.styles["defclass"]),
             # From '#' until a newline

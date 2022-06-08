@@ -27,12 +27,14 @@ class Workspace:
 
     def load(self, filename: str) -> None:
         self.files.clear()
-
-        with open(filename, "r") as workspace_file:
-            workspace = json.load(workspace_file)
-            self.name = workspace["name"]
-            self.files = workspace["files"]
-            self.file_name = workspace.get("file_name")
+        try:
+            with open(filename, "r") as workspace_file:
+                workspace = json.load(workspace_file)
+                self.name = workspace["name"]
+                self.files = workspace["files"]
+                self.file_name = workspace.get("file_name")
+        except:
+            print("problem loading last workspace")
 
     def new(self) -> None:
         if self.is_saved is not True:

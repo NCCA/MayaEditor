@@ -1,5 +1,7 @@
+import importlib.util
 from typing import Any
 
+import jedi
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -58,6 +60,7 @@ class PlainTextEdit(QPlainTextEdit):
         self.needs_saving = False
         # hack as textChanged signal always called on set of text
         self.first_edit = False
+        self.setLineWrapMode(QPlainTextEdit.NoWrap)
 
     def set_editor_fonts(self, font):
         """allow the editor to change fonts"""
@@ -95,6 +98,49 @@ class PlainTextEdit(QPlainTextEdit):
                 return False
         else:
             return False
+
+    def event(self, event):
+        """going to re-implement the event for tool tips then
+        pass on to parent if not a tool tip
+        """
+        if event.type() is QEvent.ToolTip:
+            self.process_tooltip(event)
+            return True
+        elif event.type() is QEvent.Wheel:
+            if event.modifiers() == Qt.ControlModifier:
+                if event.delta() > 0:
+                    self.zoomIn(1)
+                else:
+                    self.zoomOut(1)
+            return True
+        else:
+            return QPlainTextEdit.event(self, event)
+
+    def process_tooltip(self, event):
+        # Grab the help event and get the position
+        jedi_data = jedi.Script(self.toPlainText())
+        help_event = event
+        pos = QPoint(help_event.pos())
+        # find text under the cursos and lookup
+        cursor = self.cursorForPosition(pos)
+        cursor.select(QTextCursor.WordUnderCursor)
+        print(f"{cursor.blockNumber()+1=}")
+        hint = jedi_data.help(line=cursor.blockNumber() + 1)
+        print(f"{type(hint)} {hint=}")
+        signatures = jedi_data.call_signatures()
+        print(f"{signatures=}")
+        # help text is not the best, form to HTML and paragraph
+        raw_text = cursor.selectedText()
+        if hint:
+            try:
+                doc_str = eval(raw_text).__doc__
+            except:
+                doc_str = ""
+            help_text = f"""<html><p><b>Name : </b>{hint[0].name}</p><br>
+                <p><b>Description : </b> {hint[0].description}  </p>
+                <br><p> <b>Docs</b> : <pre>{doc_str}</pre> </p>
+                </html>"""
+            QToolTip.showText(help_event.globalPos(), help_text)
 
     def execute_code(self):
         if self.execute_selected:
