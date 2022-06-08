@@ -126,6 +126,7 @@ class PlainTextEdit(QPlainTextEdit):
         Ctrl (Command mac) + + or = : zoom in.
         Ctrl (Command mac) + - : zoom out.
         Ctrl (Command mac) + G : goto line
+        F5 : run current file
         Parameters :
         obj (QObject) : the object passing the event.
         event (QEvent) : the event to be processed.
@@ -133,7 +134,11 @@ class PlainTextEdit(QPlainTextEdit):
 
         """
         if isinstance(obj, PlainTextEdit) and event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_Return and event.modifiers() == Qt.ControlModifier:
+            if (
+                event.key() == Qt.Key_Return
+                and event.modifiers() == Qt.ControlModifier
+                or event.key() == Qt.Key_F5
+            ):
                 self.execute_code()
                 return True
             elif event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:

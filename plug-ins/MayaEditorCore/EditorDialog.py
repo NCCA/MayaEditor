@@ -64,8 +64,10 @@ class EditorDialog(QDialog):
         self.create_menu_bar()
         # connect tab close event
         self.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
-
+        # setup file view sidebar
         self.open_files.setHeaderHidden(True)
+        self.open_files.itemClicked.connect(self.file_view_changed)
+        # create workspace
         self.workspace = Workspace()
         self.load_settings()
         self.show()
@@ -282,3 +284,15 @@ class EditorDialog(QDialog):
                 index = t
                 break
         self.editor_tab.widget(index).execute_code()
+
+    def file_view_changed(self, item):
+        """Update the editor tab based on the new item."""
+        text = item.text(0)
+        # first find the index of the active tab
+        tab = self.editor_tab  # type: ignore
+        index = 0
+        for t in range(0, tab.count() + 1):
+            if text == tab.tabText(t):
+                index = t
+                break
+        tab.setCurrentIndex(t)
