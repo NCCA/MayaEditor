@@ -27,20 +27,29 @@ class Ui_editor_dialog(object):
         editor_dialog.resize(995, 705)
         self.main_grid_layout = QGridLayout(editor_dialog)
         self.main_grid_layout.setObjectName(u"main_grid_layout")
-        self.output_window = QPlainTextEdit(editor_dialog)
-        self.output_window.setObjectName(u"output_window")
+        self.dock_widget = QDockWidget(editor_dialog)
+        self.dock_widget.setObjectName(u"dock_widget")
+        self.dock_widget.setFloating(False)
+        self.dock_widget.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable)
+        self.dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.dock_widget.setWidget(self.dockWidgetContents)
 
-        self.main_grid_layout.addWidget(self.output_window, 2, 0, 1, 1)
+        self.main_grid_layout.addWidget(self.dock_widget, 0, 0, 1, 1)
 
         self.splitter = QSplitter(editor_dialog)
         self.splitter.setObjectName(u"splitter")
+        self.splitter.setOrientation(Qt.Vertical)
+        self.editor_splitter = QSplitter(self.splitter)
+        self.editor_splitter.setObjectName(u"editor_splitter")
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(2)
-        sizePolicy.setHeightForWidth(self.splitter.sizePolicy().hasHeightForWidth())
-        self.splitter.setSizePolicy(sizePolicy)
-        self.splitter.setOrientation(Qt.Horizontal)
-        self.groupBox = QGroupBox(self.splitter)
+        sizePolicy.setHeightForWidth(self.editor_splitter.sizePolicy().hasHeightForWidth())
+        self.editor_splitter.setSizePolicy(sizePolicy)
+        self.editor_splitter.setOrientation(Qt.Horizontal)
+        self.groupBox = QGroupBox(self.editor_splitter)
         self.groupBox.setObjectName(u"groupBox")
         sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
@@ -62,8 +71,8 @@ class Ui_editor_dialog(object):
 
         self.verticalLayout.addWidget(self.open_files)
 
-        self.splitter.addWidget(self.groupBox)
-        self.editor_tab = QTabWidget(self.splitter)
+        self.editor_splitter.addWidget(self.groupBox)
+        self.editor_tab = QTabWidget(self.editor_splitter)
         self.editor_tab.setObjectName(u"editor_tab")
         sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy3.setHorizontalStretch(1)
@@ -73,20 +82,13 @@ class Ui_editor_dialog(object):
         self.editor_tab.setDocumentMode(True)
         self.editor_tab.setTabsClosable(True)
         self.editor_tab.setMovable(True)
-        self.splitter.addWidget(self.editor_tab)
+        self.editor_splitter.addWidget(self.editor_tab)
+        self.splitter.addWidget(self.editor_splitter)
+        self.output_window = QPlainTextEdit(self.splitter)
+        self.output_window.setObjectName(u"output_window")
+        self.splitter.addWidget(self.output_window)
 
         self.main_grid_layout.addWidget(self.splitter, 1, 0, 1, 1)
-
-        self.dock_widget = QDockWidget(editor_dialog)
-        self.dock_widget.setObjectName(u"dock_widget")
-        self.dock_widget.setFloating(False)
-        self.dock_widget.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable)
-        self.dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.dockWidgetContents = QWidget()
-        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
-        self.dock_widget.setWidget(self.dockWidgetContents)
-
-        self.main_grid_layout.addWidget(self.dock_widget, 0, 0, 1, 1)
 
 
         self.retranslateUi(editor_dialog)
@@ -99,7 +101,7 @@ class Ui_editor_dialog(object):
 
     def retranslateUi(self, editor_dialog):
         editor_dialog.setWindowTitle(QCoreApplication.translate("editor_dialog", u"NCCA Editor", None))
-        self.groupBox.setTitle(QCoreApplication.translate("editor_dialog", u"Files", None))
         self.dock_widget.setWindowTitle(QCoreApplication.translate("editor_dialog", u"Script Controls", None))
+        self.groupBox.setTitle(QCoreApplication.translate("editor_dialog", u"Files", None))
     # retranslateUi
 
