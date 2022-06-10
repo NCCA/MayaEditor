@@ -1,5 +1,15 @@
 # TODO
 
+# Today
+
+Remove files from sidebar if closed 
+Save more state in workplace : -
+  1. Active run file
+  2. Cursor Positions
+  3. Active Tab
+Check to see if workspace should be saved on exit 
+
+# Project 
 1. Add Font control / Style Sheets
 2. Add Search / Search Replace
 3. Add controls to save font / highlight colours

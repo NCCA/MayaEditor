@@ -1,3 +1,17 @@
+# Copyright (C) 2022  Jonathan Macey
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+#  any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Editor Dialog Class for the NCCA Maya Editor.
 
 This is the core Dialog class where all other elements are created and controlled. This can work stand alone as well as part of a plugin.
@@ -53,7 +67,9 @@ class EditorDialog(QDialog):
         """
         super().__init__(parent)
         # This should work but crashes Maya2023 go figure!
-        # self.callback_id = OpenMaya.MCommandMessage.addCommandOutputFilterCallback( self.message_callback  )
+        self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
+            self.message_callback, ""
+        )
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
@@ -81,12 +97,47 @@ class EditorDialog(QDialog):
         if sz := self.settings.value("size"):
             self.resize(sz)
 
-    def message_callback(self, message: str) -> None:
-        """Use to put maya output to the output window.
+    def debug(self, message: str) -> None:
+        self.output_window.appendHtml(
+            f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>'
+        )
 
-        At present this is not working as using callbacks crash maya
+    def message_callback(self, message: str, mtype, client_data) -> None:
+        """Use to put maya output to the output window.
+        Parameters :
+        message (str) : the message to print
+        mtype (int) : type of message
+        client_data : not used
+         OPENMAYA_ENUM(MessageType,
+        kHistory,		//!< Command history
+        kDisplay,		//!< String to display unmodified
+        kInfo,			//!< General information
+        kWarning,		//!< Warning message
+        kError,			//!< Error message
+        kResult,		//!< Result from a command execution in the command window
+                kStackTrace
+
         """
-        self.output_window.append(message.strip())  # type: ignore
+        self.output_window.moveCursor(QTextCursor.End)
+        # self.output_window.insertPlainText(f"{mtype=}")  # type: ignore
+        colour = "white"
+        if mtype == OpenMaya.MCommandMessage.kHistory:
+            colour = "blue"
+        elif mtype == OpenMaya.MCommandMessage.kDisplay:
+            colour = "yellow"
+        elif mtype == OpenMaya.MCommandMessage.kInfo:
+            colour = "white"
+        elif mtype == OpenMaya.MCommandMessage.kWarning:
+            colour = "green"
+        elif mtype == OpenMaya.MCommandMessage.kError:
+            colour = "red"
+        elif mtype == OpenMaya.MCommandMessage.kResult:
+            colour = "blue"
+
+        # this moves to the end so we don't get double new lines etc
+        self.output_window.moveCursor(QTextCursor.End)
+        # self.output_window.insertPlainText(message)
+        self.output_window.appendHtml(f'<p style="color:{colour}">{message}</p>')
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Event called when the Dialog closeEvent is  triggered.
@@ -95,7 +146,7 @@ class EditorDialog(QDialog):
         Parameters :
         event (QCloseEvent) : event passed in to close
         """
-        # OpenMaya.MMessage.removeCallback(self.callback_id)
+        OpenMaya.MMessage.removeCallback(self.callback_id)
         print("Closing Dialog")
         self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
         self.settings.setValue("size", self.size())
@@ -156,6 +207,8 @@ class EditorDialog(QDialog):
         """Create a new file tab."""
         editor = PlainTextEdit("", "untitled.py")
         self.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
+        self.editor_tab.setCurrentIndex(0)
+        self.editor_tab.widget(0).setFocus()
 
     def create_tool_bar(self) -> None:
         """Create the toolbar."""
@@ -170,12 +223,12 @@ class EditorDialog(QDialog):
         Parameters :
         index (int) : index of the tab where the close was requested.
         """
-        print(f"tab close {index} ")
         tab: QTabWidget = self.editor_tab  # type: ignore
         editor: PlainTextEdit = tab.widget(index)  # type: ignore
-
+        file_name = tab.tabText(index)
         if editor.needs_saving is not True:
             tab.removeTab(index)
+            self.remove_from_open_files(file_name)
         # need to check if we want to save or discard
         else:
             msg_box = QMessageBox()
@@ -191,11 +244,12 @@ class EditorDialog(QDialog):
                 saved = editor.save_file()
                 if saved:
                     tab.removeTab(index)
+                    self.remove_from_open_files(file_name)
                 else:
                     return
-
             elif ret == QMessageBox.Discard:
                 tab.removeTab(index)
+                self.remove_from_open_files(file_name)
             elif ret == QMessageBox.Cancel:
                 pass
 
@@ -296,3 +350,16 @@ class EditorDialog(QDialog):
                 index = t
                 break
         tab.setCurrentIndex(t)
+
+    def remove_from_open_files(self, filename):
+        """Remove filename from sidebar.
+        Parameters :
+        filename (str) : the name to search for and remove
+        """
+        # self.open_files.removeItemWidget(self.open_files.currentItem())
+        self.debug(f"removing {filename}")
+        items = self.open_files.findItems(filename, Qt.MatchContains)
+
+        for i in items:
+            self.open_files.removeItemWidget(i, 0)
+            self.open_files.takeTopLevelItem(0)
