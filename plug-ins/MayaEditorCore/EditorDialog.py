@@ -87,6 +87,7 @@ class EditorDialog(QDialog):
         self.workspace = Workspace()
         self.load_settings()
         self.show()
+        self.create_live_editor()
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
@@ -118,7 +119,6 @@ class EditorDialog(QDialog):
                 kStackTrace
 
         """
-        self.output_window.moveCursor(QTextCursor.End)
         # self.output_window.insertPlainText(f"{mtype=}")  # type: ignore
         colour = "white"
         if mtype == OpenMaya.MCommandMessage.kHistory:
@@ -133,11 +133,11 @@ class EditorDialog(QDialog):
             colour = "red"
         elif mtype == OpenMaya.MCommandMessage.kResult:
             colour = "blue"
-
+        message = message.strip("\n\r")
         # this moves to the end so we don't get double new lines etc
         self.output_window.moveCursor(QTextCursor.End)
-        # self.output_window.insertPlainText(message)
         self.output_window.appendHtml(f'<p style="color:{colour}">{message}</p>')
+        self.output_window.moveCursor(QTextCursor.End)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Event called when the Dialog closeEvent is  triggered.
@@ -363,3 +363,13 @@ class EditorDialog(QDialog):
         for i in items:
             self.open_files.removeItemWidget(i, 0)
             self.open_files.takeTopLevelItem(0)
+
+    def create_live_editor(self):
+        editor = PlainTextEdit("", "live_window", live=True, parent=self)
+        self.editor_tab.insertTab(0, editor, "live_window")  # type: ignore
+        self.editor_tab.setTabsClosable(False)
+        self.editor_tab.setCurrentIndex(0)
+        self.editor_tab.widget(0).setFocus()
+        item = QTreeWidgetItem(self.open_files)  # type: ignore
+        item.setText(0, "live_window")
+        self.open_files.addTopLevelItem(item)  # type: ignore

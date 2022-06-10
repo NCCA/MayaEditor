@@ -17,6 +17,7 @@ import importlib.util
 from typing import Any, Callable, Optional, Type
 
 import jedi
+import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -65,13 +66,16 @@ class PlainTextEdit(QPlainTextEdit):
     shortcuts zooms and line numbers
     """
 
-    def __init__(self, code: str, filename: str, parent: Optional[Any] = None):
+    def __init__(
+        self, code: str, filename: str, live=False, parent: Optional[Any] = None
+    ):
         """
         Construct our PlainTextEdit.
 
         Parameters:
         code (str): The source code for the editor.
         filename (str) : The name of the source file used by the tab.
+        live (bool) : if set to true we echo output and clear on run like the maya one
         parent (QObject) : parent widget.
         """
         super().__init__(parent)
@@ -101,6 +105,7 @@ class PlainTextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.live = live
         # Add some extra controls to this widget
 
     def set_editor_fonts(self, font):
@@ -214,11 +219,8 @@ class PlainTextEdit(QPlainTextEdit):
         # find text under the cursos and lookup
         cursor = self.cursorForPosition(pos)
         cursor.select(QTextCursor.WordUnderCursor)
-        print(f"{cursor.blockNumber()+1=}")
         hint = jedi_data.help(line=cursor.blockNumber() + 1)
-        print(f"{type(hint)} {hint=}")
         signatures = jedi_data.call_signatures()
-        print(f"{signatures=}")
         # help text is not the best, form to HTML and paragraph
         raw_text = cursor.selectedText()
         if hint:
@@ -244,9 +246,29 @@ class PlainTextEdit(QPlainTextEdit):
             # returns a unicode paragraph instead of \n
             # so replace
             text = text.replace("\u2029", "\n")
+            if self.live:
+                self.parent.message_callback(
+                    self.toPlainText(), OpenMaya.MCommandMessage.kDisplay, ""
+                )
             value = utils.executeInMainThreadWithResult(text)
+            if self.live and value != None:
+                self.parent.message_callback(
+                    str(value), OpenMaya.MCommandMessage.kResult, ""
+                )
+
         else:
-            value = utils.executeInMainThreadWithResult(self.toPlainText())
+            text_to_run = self.toPlainText()
+            if self.live:
+                self.parent.message_callback(
+                    text_to_run, OpenMaya.MCommandMessage.kDisplay, ""
+                )
+                self.clear()
+            value = utils.executeInMainThreadWithResult(text_to_run)
+            # if we are a live window clear the editor
+            if self.live and value != None:
+                self.parent.message_callback(
+                    str(value), OpenMaya.MCommandMessage.kDisplay, ""
+                )
 
     def save_file(self):
         """Save the current editor file.

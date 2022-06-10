@@ -60,6 +60,12 @@ class EditorToolBar(QToolBar):
         goto_number.setMaximum(999999)
         goto_number.valueChanged.connect(parent.tool_bar_goto_changed)
         self.addWidget(goto_number)
+        # add output window controls
+        self.addSeparator()
+        clear_output = QPushButton("Clear Output")
+        clear_output.clicked.connect(parent.output_window.clear)
+        self.addWidget(clear_output)
+        
 
     def add_to_active_file_list(self, filename: str) -> None:
         """Add filename to run project combo."""
