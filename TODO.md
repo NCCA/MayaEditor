@@ -2,12 +2,14 @@
 
 # Today
 
-Remove files from sidebar if closed 
-Save more state in workplace : -
-  1. Active run file
-  2. Cursor Positions
-  3. Active Tab
-Check to see if workspace should be saved on exit 
+# Next
+
+1. Fix output window and colour scheme
+2. Re-work things to make output window better as widget
+3. more work on live editor (re-factor to make nicer)
+4. Workspace Save / Load / New not working properly
+5. Move Menu to New Module and add more features
+
 
 # Project 
 1. Add Font control / Style Sheets
