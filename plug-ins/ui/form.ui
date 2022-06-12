@@ -14,23 +14,6 @@
    <string>NCCA Editor</string>
   </property>
   <layout class="QGridLayout" name="main_grid_layout">
-   <item row="0" column="0">
-    <widget class="QDockWidget" name="dock_widget">
-     <property name="floating">
-      <bool>false</bool>
-     </property>
-     <property name="features">
-      <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
-     </property>
-     <property name="allowedAreas">
-      <set>Qt::AllDockWidgetAreas</set>
-     </property>
-     <property name="windowTitle">
-      <string>Script Controls</string>
-     </property>
-     <widget class="QWidget" name="dockWidgetContents"/>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -95,7 +78,38 @@
        </property>
       </widget>
      </widget>
-     <widget class="QPlainTextEdit" name="output_window"/>
+     <widget class="QGroupBox" name="output_window_gb">
+      <property name="title">
+       <string>Output Window</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QDockWidget" name="output_dock">
+         <widget class="QWidget" name="dockWidgetContents_2"/>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="output_window"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QDockWidget" name="dock_widget">
+     <property name="floating">
+      <bool>false</bool>
+     </property>
+     <property name="features">
+      <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+     </property>
+     <property name="allowedAreas">
+      <set>Qt::AllDockWidgetAreas</set>
+     </property>
+     <property name="windowTitle">
+      <string>Script Controls</string>
+     </property>
+     <widget class="QWidget" name="dockWidgetContents"/>
     </widget>
    </item>
   </layout>

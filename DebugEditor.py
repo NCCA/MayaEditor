@@ -31,6 +31,7 @@ def editor() -> None:
         "MayaEditorCore.Highlighter",
         "MayaEditorCore.Workspace",
         "MayaEditorCore.EditorToolBar",
+        "MayaEditorCore.OutputToolBar",
     )
     # query the MayaEditor module file for location of source
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")

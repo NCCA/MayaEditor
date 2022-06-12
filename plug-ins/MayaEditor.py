@@ -18,8 +18,6 @@ import sys
 import maya.api.OpenMaya as OpenMaya
 import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
-import maya.OpenMayaMPx as OpenMayaMPx
-import maya.OpenMayaUI as omui
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtGui import QColor, QFont

@@ -25,20 +25,19 @@ from typing import Any
 import maya.api.OpenMaya as OpenMaya
 import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
-import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMayaUI as omui
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtUiTools import *
 from PySide2.QtWidgets import *
-
 # Note this is from Maya not pyside so type hints not generated
 from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
 from .Highlighter import Highlighter
+from .OutputToolBar import OutputToolBar
 from .PlainTextEdit import PlainTextEdit
 from .Workspace import Workspace
 
@@ -49,7 +48,7 @@ def get_main_window() -> Any:
     Grab the maya main window
     Returns : QWidget of the MayaMainWindow
     """
-    window = omui.MQtUtil.mainWindow()
+    window =  omui.MQtUtil.mainWindow()
     return wrapInstance(int(window), QWidget)
 
 
@@ -215,6 +214,11 @@ class EditorDialog(QDialog):
         self.tool_bar = EditorToolBar(self)  # QToolBar(self)
         # Add to main dialog
         self.dock_widget.setWidget(self.tool_bar)  # type: ignore
+        self.output_tool_bar = OutputToolBar(self)  # QToolBar(self)
+        # Add to main dialog
+        self.output_dock.setWidget(self.output_tool_bar)  # type: ignore
+
+
 
     def tab_close_requested(self, index: int) -> None:
         """Slot called when a tab close is pressed.
