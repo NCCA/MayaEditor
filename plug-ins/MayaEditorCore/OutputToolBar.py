@@ -38,8 +38,30 @@ class OutputToolBar(QToolBar):
         self.parent: Callable[[QObject], QObject] = parent
         self.setFloatable(False)
         self.setMovable(False)
-        clear_output = QPushButton("Clear Output")
+        clear_output = QPushButton("Clear")
         clear_output.clicked.connect(parent.output_window.clear)
         self.addWidget(clear_output)
-        
+        copy_to_clipboard = QPushButton("Copy")
+        copy_to_clipboard.clicked.connect(self.clipboard_copy)
+        self.addWidget(copy_to_clipboard)
+        save_to_file = QPushButton("Save")
+        save_to_file.clicked.connect(self.save_to_file)
+        self.addWidget(save_to_file)
+    
+    def clipboard_copy(self) :
+        clipboard = QApplication.clipboard()
+        clipboard.clear(mode=clipboard.Clipboard)
+        text=self.parent.output_window.toPlainText()
+        clipboard.setText(text, mode=clipboard.Clipboard)     
+
+    def save_to_file(self) :
+        file_name, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Output Text",
+            "untitled.txt",
+            ("Text (*.txt)"),
+        )
+        if file_name is not None:
+            with open(file_name,"w") as output_file :
+                output_file.write(self.parent.output_window.toPlainText())
 

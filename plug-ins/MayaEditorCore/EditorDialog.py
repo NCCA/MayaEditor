@@ -37,8 +37,9 @@ from shiboken2 import wrapInstance  # type: ignore
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
 from .Highlighter import Highlighter
+from .OutputTextEdit import OutputTextEdit
 from .OutputToolBar import OutputToolBar
-from .PlainTextEdit import PlainTextEdit
+from .PythonTextEdit import PythonTextEdit
 from .Workspace import Workspace
 
 
@@ -75,6 +76,9 @@ class EditorDialog(QDialog):
 
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
+        # as other things may depend on this create early
+        self.create_output_window()
+
         self.create_tool_bar()
         self.create_menu_bar()
         # connect tab close event
@@ -85,8 +89,8 @@ class EditorDialog(QDialog):
         # create workspace
         self.workspace = Workspace()
         self.load_settings()
-        self.show()
         self.create_live_editor()
+        self.show()
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
@@ -197,14 +201,14 @@ class EditorDialog(QDialog):
 
             with open(file_name, "r") as code_file:
                 py_file = str(Path(file_name).name)
-                editor = PlainTextEdit(code_file.read(), file_name)
+                editor = PythonTextEdit(code_file.read(), file_name)
                 # editor.installEventFilter(self)
                 tab_index = self.editor_tab.addTab(editor, py_file)  # type: ignore
                 self.workspace.add_file(file_name)
 
     def new_file(self) -> None:
         """Create a new file tab."""
-        editor = PlainTextEdit("", "untitled.py")
+        editor = PythonTextEdit("", "untitled.py")
         self.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
@@ -228,7 +232,7 @@ class EditorDialog(QDialog):
         index (int) : index of the tab where the close was requested.
         """
         tab: QTabWidget = self.editor_tab  # type: ignore
-        editor: PlainTextEdit = tab.widget(index)  # type: ignore
+        editor: PythonTextEdit = tab.widget(index)  # type: ignore
         file_name = tab.tabText(index)
         if editor.needs_saving is not True:
             tab.removeTab(index)
@@ -303,21 +307,25 @@ class EditorDialog(QDialog):
     def load_workspace_to_editor(self, file_name: str) -> None:
         """Load in the actual workspace data to the editor tab.
 
-        This is called to load and create each new PlainTextEdit into the tabs
+        This is called to load and create each new PythonTextEdit into the tabs
         Parameters :
         file_name (str) : full path to the editor file to load
         """
         self.workspace.load(file_name)
         for code_file_name in self.workspace.files:
-            with open(code_file_name, "r") as code_file:
-                py_file = str(Path(code_file_name).name)
-                editor = PlainTextEdit(code_file.read(), file_name)
-                tab_index = self.editor_tab.addTab(editor, py_file)  # type: ignore
-                item = QTreeWidgetItem(self.open_files)  # type: ignore
-                item.setText(0, py_file)
-                self.open_files.addTopLevelItem(item)  # type: ignore
-                self.tool_bar.add_to_active_file_list(py_file)
-
+            path = Path(code_file_name)
+            if (path.is_file()) :
+                with open(code_file_name, "r") as code_file:
+                    py_file = str(Path(code_file_name).name)
+                    editor = PythonTextEdit(code_file.read(), file_name)
+                    tab_index = self.editor_tab.addTab(editor, py_file)  # type: ignore
+                    item = QTreeWidgetItem(self.open_files)  # type: ignore
+                    item.setText(0, py_file)
+                    self.open_files.addTopLevelItem(item)  # type: ignore
+                    self.tool_bar.add_to_active_file_list(py_file)
+            else :
+                self.output_window.appendHtml(f'<b><p style="color:red">Error :</p></b><p>Problem loading  file {code_file_name} from project {file_name} perhaps it has been removed</p>'
+)
     @Slot()
     def tool_bar_run_clicked(self):
         """Slot used by the Toolbar run button."""
@@ -369,7 +377,7 @@ class EditorDialog(QDialog):
             self.open_files.takeTopLevelItem(0)
 
     def create_live_editor(self):
-        editor = PlainTextEdit("", "live_window", live=True, parent=self)
+        editor = PythonTextEdit("", "live_window", live=True, parent=self)
         self.editor_tab.insertTab(0, editor, "live_window")  # type: ignore
         self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
@@ -377,3 +385,7 @@ class EditorDialog(QDialog):
         item = QTreeWidgetItem(self.open_files)  # type: ignore
         item.setText(0, "live_window")
         self.open_files.addTopLevelItem(item)  # type: ignore
+
+    def create_output_window(self) :
+        self.output_window = OutputTextEdit(self)
+        self.output_window_layout.addWidget(self.output_window)

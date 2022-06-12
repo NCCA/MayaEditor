@@ -27,11 +27,13 @@ def editor() -> None:
     modules = (
         "MayaEditorCore.EditorDialog",
         "MayaEditorCore",
-        "MayaEditorCore.PlainTextEdit",
+        "MayaEditorCore.PythonTextEdit",
         "MayaEditorCore.Highlighter",
         "MayaEditorCore.Workspace",
         "MayaEditorCore.EditorToolBar",
         "MayaEditorCore.OutputToolBar",
+        "MayaEditorCore.OutputTextEdit",
+        
     )
     # query the MayaEditor module file for location of source
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")

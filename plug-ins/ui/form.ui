@@ -78,18 +78,15 @@
        </property>
       </widget>
      </widget>
-     <widget class="QGroupBox" name="output_window_gb">
+     <widget class="QGroupBox" name="output_window_group_box">
       <property name="title">
        <string>Output Window</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="output_window_layout">
        <item>
         <widget class="QDockWidget" name="output_dock">
          <widget class="QWidget" name="dockWidgetContents_2"/>
         </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="output_window"/>
        </item>
       </layout>
      </widget>

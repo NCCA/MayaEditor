@@ -12,7 +12,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""PlainTextEdit and related classes this Class extends the QPlainTextEdit."""
+"""PythonTextEdit and related classes this Class extends the QPlainTextEdit."""
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
@@ -21,15 +21,8 @@ import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (
-    QFileDialog,
-    QInputDialog,
-    QLineEdit,
-    QPlainTextEdit,
-    QTextEdit,
-    QToolTip,
-    QWidget,
-)
+from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
+                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
 from .Highlighter import Highlighter
 
@@ -59,7 +52,7 @@ class LineNumberArea(QWidget):
         self.code_editor.lineNumberAreaPaintEvent(event)
 
 
-class PlainTextEdit(QPlainTextEdit):
+class PythonTextEdit(QPlainTextEdit):
     """Custom QPlainTextEdit.
 
     Custom QPlainTextEdit to allow us to add extra code editor features such as
@@ -70,7 +63,7 @@ class PlainTextEdit(QPlainTextEdit):
         self, code: str, filename: str, live=False, parent: Optional[Any] = None
     ):
         """
-        Construct our PlainTextEdit.
+        Construct our PythonTextEdit.
 
         Parameters:
         code (str): The source code for the editor.
@@ -152,7 +145,7 @@ class PlainTextEdit(QPlainTextEdit):
         Returns : True on processed or False to pass to next event filter.
 
         """
-        if isinstance(obj, PlainTextEdit) and event.type() == QEvent.KeyPress:
+        if isinstance(obj, PythonTextEdit) and event.type() == QEvent.KeyPress:
             if (
                 event.key() == Qt.Key_Return
                 and event.modifiers() == Qt.ControlModifier
