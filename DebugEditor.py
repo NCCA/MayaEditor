@@ -33,6 +33,10 @@ def editor() -> None:
         "MayaEditorCore.EditorToolBar",
         "MayaEditorCore.OutputToolBar",
         "MayaEditorCore.OutputTextEdit",
+        "MayaEditorCore.LineNumberArea",
+        "MayaEditorCore.MelTextEdit",
+        
+        
         
     )
     # query the MayaEditor module file for location of source

@@ -12,8 +12,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-"""PythonTextEdit and related classes this Class extends the QPlainTextEdit."""
+"""MelTextEdit and related classes this Class extends the QPlainTextEdit."""
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
@@ -26,10 +25,9 @@ from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
                                QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
 from .Highlighter import Highlighter
-from .LineNumberArea import LineNumberArea
 
 
-class PythonTextEdit(QPlainTextEdit):
+class MelTextEdit(QPlainTextEdit):
     """Custom QPlainTextEdit.
 
     Custom QPlainTextEdit to allow us to add extra code editor features such as
@@ -40,7 +38,7 @@ class PythonTextEdit(QPlainTextEdit):
         self, code: str, filename: str, live=False, parent: Optional[Any] = None
     ):
         """
-        Construct our PythonTextEdit.
+        Construct our MelTextEdit.
 
         Parameters:
         code (str): The source code for the editor.
@@ -122,7 +120,7 @@ class PythonTextEdit(QPlainTextEdit):
         Returns : True on processed or False to pass to next event filter.
 
         """
-        if isinstance(obj, PythonTextEdit) and event.type() == QEvent.KeyPress:
+        if isinstance(obj, MelTextEdit) and event.type() == QEvent.KeyPress:
             if (
                 event.key() == Qt.Key_Return
                 and event.modifiers() == Qt.ControlModifier
