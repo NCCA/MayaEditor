@@ -18,13 +18,14 @@ from typing import Any, Callable, Optional, Type
 
 import jedi
 import maya.api.OpenMaya as OpenMaya
-from maya import utils
+import maya.mel as mel
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
                                QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
 from .Highlighter import Highlighter
+from .LineNumberArea import LineNumberArea
 
 
 class MelTextEdit(QPlainTextEdit):
@@ -218,7 +219,7 @@ class MelTextEdit(QPlainTextEdit):
                 self.parent.message_callback(
                     self.toPlainText(), OpenMaya.MCommandMessage.kDisplay, ""
                 )
-            value = utils.executeInMainThreadWithResult(text)
+            value = mel.eval(text)
             if self.live and value != None:
                 self.parent.message_callback(
                     str(value), OpenMaya.MCommandMessage.kResult, ""
@@ -231,7 +232,7 @@ class MelTextEdit(QPlainTextEdit):
                     text_to_run, OpenMaya.MCommandMessage.kDisplay, ""
                 )
                 self.clear()
-            value = utils.executeInMainThreadWithResult(text_to_run)
+            value = mel.eval(text_to_run)
             # if we are a live window clear the editor
             if self.live and value != None:
                 self.parent.message_callback(

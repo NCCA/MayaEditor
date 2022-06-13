@@ -38,6 +38,7 @@ from shiboken2 import wrapInstance  # type: ignore
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
 from .Highlighter import Highlighter
+from .MelTextEdit import MelTextEdit
 from .OutputTextEdit import OutputTextEdit
 from .OutputToolBar import OutputToolBar
 from .PythonTextEdit import PythonTextEdit
@@ -389,6 +390,15 @@ class EditorDialog(QDialog):
         self.editor_tab.widget(0).setFocus()
         item = QTreeWidgetItem(self.open_files)  # type: ignore
         item.setText(0, "Python live_window")
+        self.open_files.addTopLevelItem(item)  # type: ignore
+        # add the Mel live window
+        editor = MelTextEdit("", "live_window", live=True, parent=self)
+        self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
+        self.editor_tab.setTabsClosable(False)
+        self.editor_tab.setCurrentIndex(0)
+        self.editor_tab.widget(0).setFocus()
+        item = QTreeWidgetItem(self.open_files)  # type: ignore
+        item.setText(0, "Mel live_window")
         self.open_files.addTopLevelItem(item)  # type: ignore
 
     def create_output_window(self) :
