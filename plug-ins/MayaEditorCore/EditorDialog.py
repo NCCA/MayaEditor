@@ -20,6 +20,7 @@ import os
 import socket
 import sys
 from pathlib import Path
+from turtle import width
 from typing import Any
 
 import maya.api.OpenMaya as OpenMaya
@@ -73,7 +74,9 @@ class EditorDialog(QDialog):
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
-
+        # load icons
+        self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
+        self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
         # as other things may depend on this create early
@@ -89,8 +92,9 @@ class EditorDialog(QDialog):
         # create workspace
         self.workspace = Workspace()
         self.load_settings()
-        self.create_live_editor()
+        self.create_live_editors()
         self.show()
+        
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
@@ -318,7 +322,8 @@ class EditorDialog(QDialog):
                 with open(code_file_name, "r") as code_file:
                     py_file = str(Path(code_file_name).name)
                     editor = PythonTextEdit(code_file.read(), file_name)
-                    tab_index = self.editor_tab.addTab(editor, py_file)  # type: ignore
+                    tab_index = self.editor_tab.addTab(editor,self.python_icon, py_file)  # type: ignore
+                    self.editor_tab.setIconSize(QSize(32, 32)) 
                     item = QTreeWidgetItem(self.open_files)  # type: ignore
                     item.setText(0, py_file)
                     self.open_files.addTopLevelItem(item)  # type: ignore
@@ -376,14 +381,14 @@ class EditorDialog(QDialog):
             self.open_files.removeItemWidget(i, 0)
             self.open_files.takeTopLevelItem(0)
 
-    def create_live_editor(self):
+    def create_live_editors(self):
         editor = PythonTextEdit("", "live_window", live=True, parent=self)
-        self.editor_tab.insertTab(0, editor, "live_window")  # type: ignore
+        self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
         self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
         item = QTreeWidgetItem(self.open_files)  # type: ignore
-        item.setText(0, "live_window")
+        item.setText(0, "Python live_window")
         self.open_files.addTopLevelItem(item)  # type: ignore
 
     def create_output_window(self) :
