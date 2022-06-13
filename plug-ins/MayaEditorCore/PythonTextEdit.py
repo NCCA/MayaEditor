@@ -25,8 +25,8 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
                                QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
-from .Highlighter import Highlighter
 from .LineNumberArea import LineNumberArea
+from .PythonHighlighter import PythonHighlighter
 
 
 class PythonTextEdit(QPlainTextEdit):
@@ -54,7 +54,7 @@ class PythonTextEdit(QPlainTextEdit):
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.filename = filename
         self.setPlainText(code)
-        self.highlighter = Highlighter()
+        self.highlighter = PythonHighlighter()
         self.highlighter.setDocument(self.document())
         font = QFont(
             "Andale Mono",

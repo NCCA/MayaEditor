@@ -37,7 +37,6 @@ from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
-from .Highlighter import Highlighter
 from .MelTextEdit import MelTextEdit
 from .OutputTextEdit import OutputTextEdit
 from .OutputToolBar import OutputToolBar

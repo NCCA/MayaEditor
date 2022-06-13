@@ -54,7 +54,7 @@ def _create_format_rgb(style_colour: QColor, style: str = "") -> QTextCharFormat
     return new_format
 
 
-class Highlighter(QSyntaxHighlighter):
+class PythonHighlighter(QSyntaxHighlighter):
     # fmt: off
     # Python keywords
     keywords = ["and","assert","break","class","continue","def",
@@ -102,13 +102,13 @@ class Highlighter(QSyntaxHighlighter):
         rules = []
         # Keyword, operator, and brace rules
         rules += [
-            (r"\b%s\b" % w, 0, self.styles["keyword"]) for w in Highlighter.keywords
+            (r"\b%s\b" % w, 0, self.styles["keyword"]) for w in PythonHighlighter.keywords
         ]
 
         rules += [
-            (r"%s" % o, 0, self.styles["operator"]) for o in Highlighter.operators
+            (r"%s" % o, 0, self.styles["operator"]) for o in PythonHighlighter.operators
         ]
-        rules += [(r"%s" % b, 0, self.styles["brace"]) for b in Highlighter.braces]
+        rules += [(r"%s" % b, 0, self.styles["brace"]) for b in PythonHighlighter.braces]
 
         # All other rules
         rules += [
