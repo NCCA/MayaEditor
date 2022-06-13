@@ -215,15 +215,17 @@ class PythonTextEdit(QPlainTextEdit):
             text = cursor.selectedText()
             # returns a unicode paragraph instead of \n
             # so replace
-            text = text.replace("\u2029", "\n")
+            text = text.replace("\u2029", "")
             if self.live:
                 self.parent.message_callback(
                     self.toPlainText(), OpenMaya.MCommandMessage.kDisplay, ""
                 )
             value = utils.executeInMainThreadWithResult(text)
             if self.live and value != None:
+                value=str(value)
+                value = value.replace("\n", "")
                 self.parent.message_callback(
-                    str(value), OpenMaya.MCommandMessage.kResult, ""
+                    value, OpenMaya.MCommandMessage.kResult, ""
                 )
 
         else:
@@ -236,8 +238,10 @@ class PythonTextEdit(QPlainTextEdit):
             value = utils.executeInMainThreadWithResult(text_to_run)
             # if we are a live window clear the editor
             if self.live and value != None:
+                value=str(value)
+                value=value.replace("\n", "")
                 self.parent.message_callback(
-                    str(value), OpenMaya.MCommandMessage.kDisplay, ""
+                    value, OpenMaya.MCommandMessage.kDisplay, ""
                 )
 
     def save_file(self):

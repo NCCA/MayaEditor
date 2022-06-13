@@ -129,7 +129,7 @@ class EditorDialog(QDialog):
         # self.output_window.insertPlainText(f"{mtype=}")  # type: ignore
         colour = "white"
         if mtype == OpenMaya.MCommandMessage.kHistory:
-            colour = "blue"
+            colour = "lightblue"
         elif mtype == OpenMaya.MCommandMessage.kDisplay:
             colour = "yellow"
         elif mtype == OpenMaya.MCommandMessage.kInfo:
@@ -139,11 +139,11 @@ class EditorDialog(QDialog):
         elif mtype == OpenMaya.MCommandMessage.kError:
             colour = "red"
         elif mtype == OpenMaya.MCommandMessage.kResult:
-            colour = "blue"
+            colour = "lightblue"
         message = message.strip("\n\r")
         # this moves to the end so we don't get double new lines etc
         self.output_window.moveCursor(QTextCursor.End)
-        self.output_window.appendHtml(f'<p style="color:{colour}">{message}</p>')
+        self.output_window.appendHtml(f'<p style="color:{colour}"><pre>{message}</pre></p>')
         self.output_window.moveCursor(QTextCursor.End)
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -321,9 +321,16 @@ class EditorDialog(QDialog):
             if (path.is_file()) :
                 with open(code_file_name, "r") as code_file:
                     py_file = str(Path(code_file_name).name)
-                    editor = PythonTextEdit(code_file.read(), file_name)
-                    tab_index = self.editor_tab.addTab(editor,self.python_icon, py_file)  # type: ignore
-                    self.editor_tab.setIconSize(QSize(32, 32)) 
+                    if path.suffix == ".py" :
+                        editor = PythonTextEdit(code_file.read(), file_name)
+                        icon = self.python_icon
+                    elif path.suffix ==".mel" :
+                        editor = MelTextEdit(code_file.read(), file_name)
+                        icon = self.mel_icon
+                    else :
+                         self.output_window.appendHtml("<p/><b>Wrong extension for file</b>")
+                    tab_index = self.editor_tab.addTab(editor,icon, py_file)  # type: ignore
+                    # self.editor_tab.setIconSize(QSize(32, 32)) 
                     item = QTreeWidgetItem(self.open_files)  # type: ignore
                     item.setText(0, py_file)
                     self.open_files.addTopLevelItem(item)  # type: ignore

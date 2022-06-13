@@ -2,6 +2,10 @@
 
 # Today
 
+Output window is odd, think append HTML is adding newline (not in mel tho) so need to make this work better.
+
+Mel syntax needs to be improved (need to find a bnf for it)
+
 # Next
 
 1. Fix output window and colour scheme
@@ -14,11 +18,10 @@
 # Project 
 1. Add Font control / Style Sheets
 2. Add Search / Search Replace
-3. Add Mel Editor / Support
-4. Add controls to save font / highlight colours
-5. Save more settings
-6. Get Jedi and type hints working better
-7. code completion
-8. Polish (more like VSCode?)
-9. Sort out the output when running python
-10. Can I add Debugging?
+3. Add controls to save font / highlight colours
+4. Save more settings
+5. Get Jedi and type hints working better
+6. code completion
+7. Polish (more like VSCode?)
+8. Sort out the output when running python
+9.  Can I add Debugging?

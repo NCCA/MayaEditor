@@ -56,6 +56,7 @@ class OutputTextEdit(QPlainTextEdit):
         self.tab_size=4
         self.set_editor_fonts(font)
         self.installEventFilter(self)
+        self.setReadOnly(True)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
 
     def set_editor_fonts(self, font):
@@ -111,10 +112,8 @@ class OutputTextEdit(QPlainTextEdit):
         event (QEvent) : the event to be processed.
         Returns :  True is event is processed here else False to pass on.
         """
-        if event.type() is QEvent.ToolTip:
-            self.process_tooltip(event)
-            return True
-        elif event.type() is QEvent.Wheel:
+    
+        if event.type() is QEvent.Wheel:
             if event.modifiers() == Qt.ControlModifier:
                 if event.delta() > 0:
                     self.zoomIn(1)
