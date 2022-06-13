@@ -172,6 +172,7 @@ class EditorDialog(QDialog):
         print("Closing Dialog")
         self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
         self.settings.setValue("size", self.size())
+        self.settings.setValue("workspace", self.workspace.file_name)
         super(EditorDialog, self).closeEvent(event)
 
     def create_menu_bar(self) -> None:
@@ -214,16 +215,10 @@ class EditorDialog(QDialog):
             self,
             "Select File to Open",
             "",
-            ("Mel / Python (*.py *.mel)"),
+            ("Mel / Python (*.py *.mel, *.*)"),
         )
-        if file_name is not None:
-
-            with open(file_name, "r") as code_file:
-                py_file = str(Path(file_name).name)
-                editor = PythonTextEdit(code_file.read(), file_name)
-                # editor.installEventFilter(self)
-                tab_index = self.editor_tab.addTab(editor, py_file)  # type: ignore
-                self.workspace.add_file(file_name)
+        self.create_editor_and_load_files(file_name,file_name)
+        self.workspace.add_file(file_name)
 
     def new_file(self) -> None:
         """Create a new file tab."""
@@ -290,11 +285,11 @@ class EditorDialog(QDialog):
         """
         if self.workspace.is_saved is not True:
             self.save_workspace()
-        else:
-            tab = self.editor_tab  # type: ignore
-            for t in range(0, tab.count() + 1):
-                tab.removeTab(t)
-            self.workspace.new()
+        tab = self.editor_tab  # type: ignore
+        tab.clear()
+        self.workspace.new()
+        self.open_files.clear() 
+        self.create_live_editors()
 
     def save_workspace(self) -> None:
         """Save current workspace."""
@@ -309,7 +304,14 @@ class EditorDialog(QDialog):
 
     def close_workspace(self) -> None:
         """Close the current workspace."""
-        pass
+        # if not self.workspace.is_saved :
+        #     self.save_workspace()
+
+        tab = self.editor_tab  # type: ignore
+        tab.clear()
+        self.open_files.clear() 
+        self.create_live_editors()
+
 
     def open_workspace(self) -> None:
         """Open a new workspace.
@@ -326,6 +328,45 @@ class EditorDialog(QDialog):
             self.settings.setValue("workspace", file_name)
             self.load_workspace_to_editor(file_name)
 
+    def create_editor_and_load_files(self,code_file_name : str, file_name : str) -> None :
+        """This method creates new editors and links the different elements."""
+        path = Path(code_file_name)
+        if (path.is_file()) :
+            with open(code_file_name, "r") as code_file:
+                py_file = str(Path(code_file_name).name)
+                if path.suffix == ".py" :
+                    editor = PythonTextEdit(code_file.read(), file_name)
+                    icon = self.python_icon
+                elif path.suffix ==".mel" :
+                    editor = MelTextEdit(code_file.read(), file_name)
+                    icon = self.mel_icon
+                else :
+                    editor = QPlainTextEdit(code_file.read())
+                    icon = QIcon()
+                    
+                    self.output_window.appendHtml("<p/><b>Wrong extension for file loading as text</b>")
+                # connect up the editor to the output window and run menu if code
+                if path.suffix  in (".mel",".py") :
+                    editor.update_output.connect(self.output_window.append_plain_text)
+                    editor.update_output_html.connect(self.output_window.append_html)
+                    editor.draw_line.connect(self.output_window.draw_line)
+                    self.tool_bar.add_to_active_file_list(py_file)
+
+                # add to the tab
+                tab = self.editor_tab
+                tab_index = tab.addTab(editor,icon, py_file)  # type: ignore
+                tab.setTabsClosable(True)
+                tab.setCurrentIndex(tab_index)
+                # add to the file view and run menu
+                item = QTreeWidgetItem(self.open_files)  # type: ignore
+                item.setText(0, py_file)
+                self.open_files.addTopLevelItem(item)  # type: ignore
+                
+        else :
+            self.output_window.appendHtml(f'<b><p style="color:red">Error :</p></b><p>Problem loading  file {code_file_name} from project {file_name} perhaps it has been removed</p>'
+)
+
+
     def load_workspace_to_editor(self, file_name: str) -> None:
         """Load in the actual workspace data to the editor tab.
         This is called to load and create each new PythonTextEdit into the tabs
@@ -334,32 +375,7 @@ class EditorDialog(QDialog):
         """
         self.workspace.load(file_name)
         for code_file_name in self.workspace.files:
-            path = Path(code_file_name)
-            if (path.is_file()) :
-                with open(code_file_name, "r") as code_file:
-                    py_file = str(Path(code_file_name).name)
-                    if path.suffix == ".py" :
-                        editor = PythonTextEdit(code_file.read(), file_name)
-                        icon = self.python_icon
-                    elif path.suffix ==".mel" :
-                        editor = MelTextEdit(code_file.read(), file_name)
-                        icon = self.mel_icon
-                    else :
-                         self.output_window.appendHtml("<p/><b>Wrong extension for file</b>")
-                    # connect up the editor to the output window
-                    editor.update_output.connect(self.output_window.append_plain_text)
-                    editor.update_output_html.connect(self.output_window.append_html)
-                    editor.draw_line.connect(self.output_window.draw_line)
-
-                    tab_index = self.editor_tab.addTab(editor,icon, py_file)  # type: ignore
-                    self.editor_tab.setTabsClosable(True)
-                    item = QTreeWidgetItem(self.open_files)  # type: ignore
-                    item.setText(0, py_file)
-                    self.open_files.addTopLevelItem(item)  # type: ignore
-                    self.tool_bar.add_to_active_file_list(py_file)
-            else :
-                self.output_window.appendHtml(f'<b><p style="color:red">Error :</p></b><p>Problem loading  file {code_file_name} from project {file_name} perhaps it has been removed</p>'
-)
+            self.create_editor_and_load_files(code_file_name,file_name)
     @Slot()
     def tool_bar_run_clicked(self):
         """Slot used by the Toolbar run button."""
