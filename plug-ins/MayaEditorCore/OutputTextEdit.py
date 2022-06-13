@@ -148,3 +148,22 @@ class OutputTextEdit(QPlainTextEdit):
 
         cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
         self.setTextCursor(cursor)
+
+    @Slot(str)
+    def append_plain_text(self,text : str) :
+        self.moveCursor(QTextCursor.End)
+        self.insertPlainText(text)
+
+    @Slot(str)
+    def append_html(self,text : str) :
+        self.moveCursor(QTextCursor.End)
+        cursor=self.textCursor()
+        cursor.insertHtml(f"<p><pre>{text}<pre></p>")
+
+    @Slot()
+    def draw_line(self) :
+        self.moveCursor(QTextCursor.End)
+        cursor=self.textCursor()
+ #       cursor.insertHtml('<hr>')
+        self.appendHtml('<hr>')
+

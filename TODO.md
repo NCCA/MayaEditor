@@ -6,6 +6,8 @@ Output window is odd, think append HTML is adding newline (not in mel tho) so ne
 
 Mel syntax needs to be improved (need to find a bnf for it)
 
+Remove python tracebacks from output window
+
 # Next
 
 1. Fix output window and colour scheme

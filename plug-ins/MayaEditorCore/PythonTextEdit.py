@@ -35,6 +35,9 @@ class PythonTextEdit(QPlainTextEdit):
     Custom QPlainTextEdit to allow us to add extra code editor features such as
     shortcuts zooms and line numbers
     """
+    update_output = Signal(str)
+    update_output_html = Signal(str)
+    draw_line = Signal()
 
     def __init__(
         self, code: str, filename: str, live=False, parent: Optional[Any] = None
@@ -49,7 +52,6 @@ class PythonTextEdit(QPlainTextEdit):
         parent (QObject) : parent widget.
         """
         super().__init__(parent)
-        self.parent: Callable[[QObject], QObject] = parent
         self.line_number_area: LineNumberArea = LineNumberArea(self)
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.filename = filename
@@ -215,34 +217,30 @@ class PythonTextEdit(QPlainTextEdit):
             text = cursor.selectedText()
             # returns a unicode paragraph instead of \n
             # so replace
-            text = text.replace("\u2029", "")
+            text = text.replace("\u2029", "\n")
             if self.live:
-                self.parent.message_callback(
-                    self.toPlainText(), OpenMaya.MCommandMessage.kDisplay, ""
-                )
+                self.update_output.emit(self.toPlainText()+"\n")
+                self.draw_line.emit()
+
             value = utils.executeInMainThreadWithResult(text)
             if self.live and value != None:
-                value=str(value)
-                value = value.replace("\n", "")
-                self.parent.message_callback(
-                    value, OpenMaya.MCommandMessage.kResult, ""
-                )
+                value=str(value)+"\n"
+                self.draw_line.emit()
+
+                self.update_output_html.emit(value)
+                self.draw_line.emit()
 
         else:
-            text_to_run = self.toPlainText()
+            text_to_run = self.toPlainText()+"\n"
             if self.live:
-                self.parent.message_callback(
-                    text_to_run, OpenMaya.MCommandMessage.kDisplay, ""
-                )
+                self.update_output.emit(text_to_run)
+                self.draw_line.emit()
                 self.clear()
             value = utils.executeInMainThreadWithResult(text_to_run)
-            # if we are a live window clear the editor
+            # if we are a live window output the results
             if self.live and value != None:
                 value=str(value)
-                value=value.replace("\n", "")
-                self.parent.message_callback(
-                    value, OpenMaya.MCommandMessage.kDisplay, ""
-                )
+                self.update_output.emit(value)
 
     def save_file(self):
         """Save the current editor file.

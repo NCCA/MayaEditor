@@ -59,6 +59,8 @@ class EditorDialog(QDialog):
 
     Inherits from QDialog and loads the ui from files.
     """
+    update_output = Signal(str)
+    update_output_html = Signal(str)
 
     def __init__(self, parent=get_main_window()):
         """Construct the class.
@@ -92,8 +94,12 @@ class EditorDialog(QDialog):
         # create workspace
         self.workspace = Workspace()
         self.load_settings()
+        
         self.create_live_editors()
+        self.update_output.connect(self.output_window.append_plain_text)
+        self.update_output_html.connect(self.output_window.append_html)
         self.show()
+
         
 
     def load_settings(self) -> None:
@@ -128,23 +134,32 @@ class EditorDialog(QDialog):
         """
         # self.output_window.insertPlainText(f"{mtype=}")  # type: ignore
         colour = "white"
+        message_prefix=""
         if mtype == OpenMaya.MCommandMessage.kHistory:
             colour = "lightblue"
+            message_prefix="History : "
         elif mtype == OpenMaya.MCommandMessage.kDisplay:
             colour = "yellow"
         elif mtype == OpenMaya.MCommandMessage.kInfo:
             colour = "white"
+            message_prefix="Info : "
+
         elif mtype == OpenMaya.MCommandMessage.kWarning:
             colour = "green"
+            message_prefix="Warning : "
         elif mtype == OpenMaya.MCommandMessage.kError:
             colour = "red"
+            message_prefix="Error : "
+
         elif mtype == OpenMaya.MCommandMessage.kResult:
             colour = "lightblue"
-        message = message.strip("\n\r")
+            message_prefix="Result :"
+
         # this moves to the end so we don't get double new lines etc
-        self.output_window.moveCursor(QTextCursor.End)
-        self.output_window.appendHtml(f'<p style="color:{colour}"><pre>{message}</pre></p>')
-        self.output_window.moveCursor(QTextCursor.End)
+        #self.output_window.moveCursor(QTextCursor.End)
+        html=f'<p style="color:{colour}"><pre>{message_prefix}{message}</pre></p>'
+        #self.output_window.moveCursor(QTextCursor.End)
+        self.update_output_html.emit(html)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Event called when the Dialog closeEvent is  triggered.
@@ -238,6 +253,9 @@ class EditorDialog(QDialog):
         tab: QTabWidget = self.editor_tab  # type: ignore
         editor: PythonTextEdit = tab.widget(index)  # type: ignore
         file_name = tab.tabText(index)
+        # don't close live editors
+        if file_name in ["Python live_window","Mel live_window"] :
+            return 
         if editor.needs_saving is not True:
             tab.removeTab(index)
             self.remove_from_open_files(file_name)
@@ -310,7 +328,6 @@ class EditorDialog(QDialog):
 
     def load_workspace_to_editor(self, file_name: str) -> None:
         """Load in the actual workspace data to the editor tab.
-
         This is called to load and create each new PythonTextEdit into the tabs
         Parameters :
         file_name (str) : full path to the editor file to load
@@ -329,8 +346,13 @@ class EditorDialog(QDialog):
                         icon = self.mel_icon
                     else :
                          self.output_window.appendHtml("<p/><b>Wrong extension for file</b>")
+                    # connect up the editor to the output window
+                    editor.update_output.connect(self.output_window.append_plain_text)
+                    editor.update_output_html.connect(self.output_window.append_html)
+                    editor.draw_line.connect(self.output_window.draw_line)
+
                     tab_index = self.editor_tab.addTab(editor,icon, py_file)  # type: ignore
-                    # self.editor_tab.setIconSize(QSize(32, 32)) 
+                    self.editor_tab.setTabsClosable(True)
                     item = QTreeWidgetItem(self.open_files)  # type: ignore
                     item.setText(0, py_file)
                     self.open_files.addTopLevelItem(item)  # type: ignore
@@ -390,8 +412,13 @@ class EditorDialog(QDialog):
 
     def create_live_editors(self):
         editor = PythonTextEdit("", "live_window", live=True, parent=self)
+        # wire up editor signal to output window
+        editor.update_output.connect(self.output_window.append_plain_text)
+        editor.update_output_html.connect(self.output_window.append_html)
+        editor.draw_line.connect(self.output_window.draw_line)
+        
         self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
-        self.editor_tab.setTabsClosable(False)
+        #self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
         item = QTreeWidgetItem(self.open_files)  # type: ignore
@@ -399,8 +426,12 @@ class EditorDialog(QDialog):
         self.open_files.addTopLevelItem(item)  # type: ignore
         # add the Mel live window
         editor = MelTextEdit("", "live_window", live=True, parent=self)
+        editor.update_output.connect(self.output_window.append_plain_text)
+        editor.update_output_html.connect(self.output_window.append_html)
+        editor.draw_line.connect(self.output_window.draw_line)
+
         self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
-        self.editor_tab.setTabsClosable(False)
+        #self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
         item = QTreeWidgetItem(self.open_files)  # type: ignore
