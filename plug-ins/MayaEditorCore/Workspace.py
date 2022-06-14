@@ -1,4 +1,4 @@
-# Copyright (C) 2022  Jonathan Macey
+############################################################################### Copyright (C) 2022  Jonathan Macey
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,12 +11,13 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.##############################################################################
 """Workspace module for the NCCA Maya Editor.
 
 Contains all the code an functions for creating, reading and writing workspace data.
 """
 import json
+from pathlib import Path
 from typing import List
 
 from PySide2.QtCore import QDir
@@ -25,6 +26,7 @@ from PySide2.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 class Workspace:
     """Class to manage workspaces in editor."""
+            
 
     def __init__(self):
         """Workspace class to hold the data about the current workspaces."""
@@ -32,6 +34,7 @@ class Workspace:
         self.files: List[str] = []
         self.is_saved: bool = True
         self.file_name: str = ""
+         
 
     def add_file(self, file: str) -> None:
         """Add a file to the workspace.
@@ -43,6 +46,7 @@ class Workspace:
         """
         self.files.append(file)
         self.is_saved = False
+
 
     def save(self, filename: str) -> None:
         """Save the workspace.
@@ -56,27 +60,38 @@ class Workspace:
         workspace = {}
         workspace["name"] = self.workspace_name
         workspace["files"] = self.files  # type: ignore
-        workspace["file_name"] = self.file_name
         with open(filename, "w") as workspace_file:
             json.dump(workspace, indent=4, fp=workspace_file)
         self.is_saved = True
 
-    def load(self, filename: str) -> None:
+
+    def load(self, filename: str) -> bool:
         """Load in a new workspace.
 
         This loads in a new workspace no check on overwrite are done
         Parameters :
         filename (str) : the full path to workspace to load
+        Returns : True is workspace loaded else False
         """
         self.files.clear()
-        try:
-            with open(filename, "r") as workspace_file:
-                workspace = json.load(workspace_file)
-                self.name = workspace["name"]
-                self.files = workspace["files"]
-                self.file_name = workspace.get("file_name")
-        except:
-            print("problem loading last workspace")
+        self.file_name = filename
+        path = Path(filename)
+        if (path.is_file()) :
+            try :
+                with open(filename, "r") as workspace_file:
+                    workspace = json.load(workspace_file)
+                    self.name = workspace["name"]
+                    self.files = workspace["files"]
+                    return True
+            except:
+                print("problem loading last workspace")
+                self.name=""
+                self.files=[]
+                self.file_name=""
+                return False
+        else :
+            return False
+
 
     def new(self) -> None:
         """Create a new workspace.

@@ -30,6 +30,7 @@ def editor() -> None:
         "MayaEditorCore.PythonTextEdit",
         "MayaEditorCore.PythonHighlighter",
         "MayaEditorCore.MelHighlighter",
+
         "MayaEditorCore.Workspace",
         "MayaEditorCore.EditorToolBar",
         "MayaEditorCore.OutputToolBar",
@@ -48,10 +49,11 @@ def editor() -> None:
     if "MayaEditorCore.EditorDialog" in sys.modules.keys():
         for module in modules:
             del sys.modules[module]
-        print("deleting and reloading module")
+        print("deleting and reloading module")  
     import MayaEditorCore
 
     MayaEditorCore.EditorDialog()
+
 
 
 editor()

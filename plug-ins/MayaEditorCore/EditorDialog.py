@@ -69,21 +69,24 @@ class EditorDialog(QDialog):
         parent (QWidget) : the Maya parent window
         """
         super().__init__(parent)
-        # This should work but crashes Maya2023 go figure!
+        # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
             self.message_callback, ""
         )
+        # Load setting first as required by other elements
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
+        # Next the UI as again required for other things
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
         # load icons
         self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
         self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
+        self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
+        
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
         # as other things may depend on this create early
         self.create_output_window()
-
         self.create_tool_bar()
         self.create_menu_bar()
         # connect tab close event
@@ -93,24 +96,28 @@ class EditorDialog(QDialog):
         self.open_files.itemClicked.connect(self.file_view_changed)
         # create workspace
         self.workspace = Workspace()
-        self.load_settings()
-        
-        self.create_live_editors()
+        # connect output window signals
         self.update_output.connect(self.output_window.append_plain_text)
         self.update_output_html.connect(self.output_window.append_html)
+        # Finally load in settings and create live editors
+        self.load_settings()
+        self.create_live_editors()
         self.show()
 
         
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
-        self.load_workspace_to_editor(self.settings.value("workspace"))
         splitter_settings = self.settings.value("splitter")
         self.editor_splitter.restoreState(splitter_settings)  # type: ignore
-
+        
+        splitter_settings = self.settings.value("vertical_splitter")
+        self.vertical_splitter.restoreState(splitter_settings)  # type: ignore
         if sz := self.settings.value("size"):
             self.resize(sz)
-
+        workspace = self.settings.value("workspace")
+        self.load_workspace_to_editor(workspace)
+            
     def debug(self, message: str) -> None:
         self.output_window.appendHtml(
             f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>'
@@ -122,17 +129,7 @@ class EditorDialog(QDialog):
         message (str) : the message to print
         mtype (int) : type of message
         client_data : not used
-         OPENMAYA_ENUM(MessageType,
-        kHistory,		//!< Command history
-        kDisplay,		//!< String to display unmodified
-        kInfo,			//!< General information
-        kWarning,		//!< Warning message
-        kError,			//!< Error message
-        kResult,		//!< Result from a command execution in the command window
-                kStackTrace
-
         """
-        # self.output_window.insertPlainText(f"{mtype=}")  # type: ignore
         colour = "white"
         message_prefix=""
         if mtype == OpenMaya.MCommandMessage.kHistory:
@@ -158,7 +155,6 @@ class EditorDialog(QDialog):
         # this moves to the end so we don't get double new lines etc
         #self.output_window.moveCursor(QTextCursor.End)
         html=f'<p style="color:{colour}"><pre>{message_prefix}{message}</pre></p>'
-        #self.output_window.moveCursor(QTextCursor.End)
         self.update_output_html.emit(html)
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -169,8 +165,8 @@ class EditorDialog(QDialog):
         event (QCloseEvent) : event passed in to close
         """
         OpenMaya.MMessage.removeCallback(self.callback_id)
-        print("Closing Dialog")
         self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
+        self.settings.setValue("vertical_splitter", self.vertical_splitter.saveState())  # type: ignore
         self.settings.setValue("size", self.size())
         self.settings.setValue("workspace", self.workspace.file_name)
         super(EditorDialog, self).closeEvent(event)
@@ -217,7 +213,8 @@ class EditorDialog(QDialog):
             "",
             ("Mel / Python (*.py *.mel, *.*)"),
         )
-        self.create_editor_and_load_files(file_name,file_name)
+        self.create_editor_and_load_files(file_name)
+        # add this file to current workspace
         self.workspace.add_file(file_name)
 
     def new_file(self) -> None:
@@ -328,21 +325,26 @@ class EditorDialog(QDialog):
             self.settings.setValue("workspace", file_name)
             self.load_workspace_to_editor(file_name)
 
-    def create_editor_and_load_files(self,code_file_name : str, file_name : str) -> None :
-        """This method creates new editors and links the different elements."""
+    def create_editor_and_load_files(self,code_file_name : str) -> None :
+        """This method creates new editors and links the different elements.
+        
+        Parameters.
+            code_file_name (str) : full path to the file to load will be truncated to short name for the tabs be getting the last name / extension
+        
+        """
         path = Path(code_file_name)
         if (path.is_file()) :
             with open(code_file_name, "r") as code_file:
-                py_file = str(Path(code_file_name).name)
+                short_name = str(Path(code_file_name).name)
                 if path.suffix == ".py" :
-                    editor = PythonTextEdit(code_file.read(), file_name)
+                    editor = PythonTextEdit(code_file.read(), short_name)
                     icon = self.python_icon
                 elif path.suffix ==".mel" :
-                    editor = MelTextEdit(code_file.read(), file_name)
+                    editor = MelTextEdit(code_file.read(), short_name)
                     icon = self.mel_icon
                 else :
                     editor = QPlainTextEdit(code_file.read())
-                    icon = QIcon()
+                    icon = self.text_icon
                     
                     self.output_window.appendHtml("<p/><b>Wrong extension for file loading as text</b>")
                 # connect up the editor to the output window and run menu if code
@@ -350,16 +352,16 @@ class EditorDialog(QDialog):
                     editor.update_output.connect(self.output_window.append_plain_text)
                     editor.update_output_html.connect(self.output_window.append_html)
                     editor.draw_line.connect(self.output_window.draw_line)
-                    self.tool_bar.add_to_active_file_list(py_file)
+                    self.tool_bar.add_to_active_file_list(short_name)
 
                 # add to the tab
                 tab = self.editor_tab
-                tab_index = tab.addTab(editor,icon, py_file)  # type: ignore
+                tab_index = tab.addTab(editor,icon, short_name)  # type: ignore
                 tab.setTabsClosable(True)
                 tab.setCurrentIndex(tab_index)
                 # add to the file view and run menu
                 item = QTreeWidgetItem(self.open_files)  # type: ignore
-                item.setText(0, py_file)
+                item.setText(0, short_name)
                 self.open_files.addTopLevelItem(item)  # type: ignore
                 
         else :
@@ -373,9 +375,10 @@ class EditorDialog(QDialog):
         Parameters :
         file_name (str) : full path to the editor file to load
         """
-        self.workspace.load(file_name)
-        for code_file_name in self.workspace.files:
-            self.create_editor_and_load_files(code_file_name,file_name)
+        if self.workspace.load(file_name) :
+            for code_file_name in self.workspace.files:
+                self.create_editor_and_load_files(code_file_name)
+
     @Slot()
     def tool_bar_run_clicked(self):
         """Slot used by the Toolbar run button."""
