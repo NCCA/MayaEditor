@@ -40,6 +40,7 @@ from .EditorToolBar import EditorToolBar
 from .MelTextEdit import MelTextEdit
 from .OutputTextEdit import OutputTextEdit
 from .OutputToolBar import OutputToolBar
+from .PlainTextEdit import PlainTextEdit
 from .PythonTextEdit import PythonTextEdit
 from .Workspace import Workspace
 
@@ -117,6 +118,33 @@ class EditorDialog(QDialog):
             self.resize(sz)
         workspace = self.settings.value("workspace")
         self.load_workspace_to_editor(workspace)
+
+        self.settings.beginGroup("Font")
+
+        font = QFont(
+            self.settings.value("font-name", type=str),
+            self.settings.value("font-size", type=int),
+            self.settings.value("font-weight", type=int),
+            self.settings.value("font-italic", type=bool),
+        )
+        self.settings.endGroup()
+
+    def save_settings(self)-> None :
+        self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
+        self.settings.setValue("vertical_splitter", self.vertical_splitter.saveState())  # type: ignore
+        self.settings.setValue("size", self.size())
+        self.settings.setValue("workspace", self.workspace.file_name)
+        self.settings.beginGroup("Font")
+        
+        self.settings.setValue("font-name", self.font.family())
+        self.settings.setValue("font-size", self.font.pointSize())
+        self.settings.setValue("font-weight", self.font.weight())
+        self.settings.setValue("font-italic", self.font.italic())
+        self.settings.endGroup()
+
+
+
+
             
     def debug(self, message: str) -> None:
         self.output_window.appendHtml(
@@ -165,10 +193,7 @@ class EditorDialog(QDialog):
         event (QCloseEvent) : event passed in to close
         """
         OpenMaya.MMessage.removeCallback(self.callback_id)
-        self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
-        self.settings.setValue("vertical_splitter", self.vertical_splitter.saveState())  # type: ignore
-        self.settings.setValue("size", self.size())
-        self.settings.setValue("workspace", self.workspace.file_name)
+        self.save_settings()
         super(EditorDialog, self).closeEvent(event)
 
     def create_menu_bar(self) -> None:
@@ -343,7 +368,7 @@ class EditorDialog(QDialog):
                     editor = MelTextEdit(code_file.read(), short_name)
                     icon = self.mel_icon
                 else :
-                    editor = QPlainTextEdit(code_file.read())
+                    editor = PlainTextEdit(code_file.read(),short_name)
                     icon = self.text_icon
                     
                     self.output_window.appendHtml("<p/><b>Wrong extension for file loading as text</b>")

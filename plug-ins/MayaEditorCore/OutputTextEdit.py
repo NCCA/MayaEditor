@@ -21,8 +21,7 @@ import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
-                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
+from PySide2.QtWidgets import QInputDialog, QPlainTextEdit
 
 
 class OutputTextEdit(QPlainTextEdit):
@@ -32,33 +31,24 @@ class OutputTextEdit(QPlainTextEdit):
     shortcuts zooms and line numbers
     """
 
-    def __init__(
-        self, parent: Optional[Any] = None
-    ):
+    def __init__( self ,parent: Optional[Any] = None):
         """
         Construct our OutputTextEdit.
 
         Parameters:
-        code (str): The source code for the editor.
-        filename (str) : The name of the source file used by the tab.
-        live (bool) : if set to true we echo output and clear on run like the maya one
+        font (QFont) : font to use
         parent (QObject) : parent widget.
         """
         super().__init__(parent)
         self.parent: Callable[[QObject], QObject] = parent
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
-        font = QFont(
-            "Andale Mono",
-            18,
-            400,
-            False,
-        )
         self.tab_size=4
-        self.set_editor_fonts(font)
+        #self.set_editor_fonts(font)
         self.installEventFilter(self)
         self.setReadOnly(True)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
 
+    @Slot(QFont)
     def set_editor_fonts(self, font):
         """Allow the editor to change fonts."""
         metrics = QFontMetrics(font)
