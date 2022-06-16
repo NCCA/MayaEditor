@@ -34,7 +34,7 @@ def editor() -> None:
         "MayaEditorCore.Workspace",
         "MayaEditorCore.EditorToolBar",
         "MayaEditorCore.OutputToolBar",
-        "MayaEditorCore.OutputTextEdit",
+        "MayaEditorCore.TextEdit",
         "MayaEditorCore.LineNumberArea",
         "MayaEditorCore.MelTextEdit",
         "MayaEditorCore.PlainTextEdit",

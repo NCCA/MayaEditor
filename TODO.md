@@ -2,11 +2,16 @@
 
 # Today
 
-Output window is odd, think append HTML is adding newline (not in mel tho) so need to make this work better.
+Re-design the Editors 
 
-Mel syntax needs to be improved (need to find a bnf for it)
+Parent -> PlainTextEdit (Lines on / off), slot for Font, ability to make ReadOnly for OutputWindows. Also for Normal Text edit in the Editor Tabs
+This window will have zoom events, Save Events etc etc. 
+Copy Past needs to be here?
 
-Remove python tracebacks from output window
+
+PlainTextEdit -> MelEditor
+PlainTextEdit -> PythonEditor
+
 
 # Next
 

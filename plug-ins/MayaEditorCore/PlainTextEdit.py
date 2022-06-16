@@ -13,19 +13,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """PlainTextEdit and related classes this Class extends the QPlainTextEdit."""
-import importlib.util
-from typing import Any, Callable, Optional, Type
+from typing import Any, Optional
 
-import jedi
-import maya.api.OpenMaya as OpenMaya
-import maya.mel as mel
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
-                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
+from PySide2.QtWidgets import (QFileDialog, QInputDialog, QPlainTextEdit,
+                               QTextEdit)
 
 from .LineNumberArea import LineNumberArea
-from .MelHighlighter import MelHighlighter
 
 
 class PlainTextEdit(QPlainTextEdit):
@@ -40,7 +35,7 @@ class PlainTextEdit(QPlainTextEdit):
     draw_line = Signal()
     
     def __init__(
-        self, code: str, filename: str, font : QFont, parent: Optional[Any] = None
+        self, code: str, filename: str, live=False, parent: Optional[Any] = None
     ):
         """
         Construct our MelTextEdit.
@@ -48,7 +43,7 @@ class PlainTextEdit(QPlainTextEdit):
         Parameters:
         code (str): The source code for the editor.
         filename (str) : The name of the source file used by the tab.
-        font (QFont) : editor font
+        live (bool) : if set to true we echo output and clear on run like the maya one
         parent (QObject) : parent widget.
         """
         super().__init__(parent)
@@ -170,7 +165,7 @@ class PlainTextEdit(QPlainTextEdit):
                 self,
                 "Save As",
                 "",
-                ("Text (*.*)"),
+                ("Python (*.py)"),
             )
             if filename is None:
                 return False

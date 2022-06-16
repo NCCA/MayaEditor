@@ -38,10 +38,10 @@ from shiboken2 import wrapInstance  # type: ignore
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
 from .MelTextEdit import MelTextEdit
-from .OutputTextEdit import OutputTextEdit
 from .OutputToolBar import OutputToolBar
 from .PlainTextEdit import PlainTextEdit
 from .PythonTextEdit import PythonTextEdit
+from .TextEdit import TextEdit
 from .Workspace import Workspace
 
 
@@ -62,6 +62,7 @@ class EditorDialog(QDialog):
     """
     update_output = Signal(str)
     update_output_html = Signal(str)
+    update_fonts = Signal(QFont)
 
     def __init__(self, parent=get_main_window()):
         """Construct the class.
@@ -144,6 +145,12 @@ class EditorDialog(QDialog):
 
 
 
+    def change_font(self):
+        (ok, font) = QFontDialog.getFont( self)
+        if ok:
+            self.font = font
+            self.update_fonts.emit(self.font)
+            print(self.font.family())
 
             
     def debug(self, message: str) -> None:
@@ -227,6 +234,16 @@ class EditorDialog(QDialog):
         workspace_menu.addAction(close_workspace)
 
         self.menu_bar.addMenu(workspace_menu)
+
+        settings_menu = QMenu("&Settings")
+        # Add settings Menu
+        font_menu = QMenu("&Font", self)
+        change_font_action = QAction("Change Font", self)
+        settings_menu.addAction(change_font_action)
+        change_font_action.triggered.connect(self.change_font)
+        self.menu_bar.addMenu(settings_menu)
+
+
 
         self.main_grid_layout.setMenuBar(self.menu_bar)  # type: ignore
 
@@ -483,5 +500,7 @@ class EditorDialog(QDialog):
         self.open_files.addTopLevelItem(item)  # type: ignore
 
     def create_output_window(self) :
-        self.output_window = OutputTextEdit(self)
+        self.output_window = TextEdit(parent=self,read_only=True,show_line_numbers=False)
+        self.update_fonts.connect(self.output_window.set_editor_fonts)
+        self.update_fonts.emit(self.font)
         self.output_window_layout.addWidget(self.output_window)

@@ -12,7 +12,11 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""OutputTextEdit and related classes this Class extends the QPlainTextEdit."""
+"""TextEdit and related classes this Class extends the QPlainTextEdit.
+
+This is the base class of all the editor text edits
+
+"""
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
@@ -21,19 +25,20 @@ import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import QInputDialog, QPlainTextEdit
+from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
+                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
 
-class OutputTextEdit(QPlainTextEdit):
+class TextEdit(QPlainTextEdit):
     """Custom QPlainTextEdit.
 
     Custom QPlainTextEdit to allow us to add extra code editor features such as
     shortcuts zooms and line numbers
     """
 
-    def __init__( self ,parent: Optional[Any] = None):
+    def __init__( self ,read_only : bool =True, show_line_numbers : bool=True ,parent: Optional[Any] = None):
         """
-        Construct our OutputTextEdit.
+        Construct our TextEdit.
 
         Parameters:
         font (QFont) : font to use
@@ -45,8 +50,9 @@ class OutputTextEdit(QPlainTextEdit):
         self.tab_size=4
         #self.set_editor_fonts(font)
         self.installEventFilter(self)
-        self.setReadOnly(True)
+        self.setReadOnly(read_only)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.show_line_numbers=show_line_numbers
 
     @Slot(QFont)
     def set_editor_fonts(self, font):
@@ -55,7 +61,7 @@ class OutputTextEdit(QPlainTextEdit):
         self.setTabStopDistance(
             QFontMetricsF(self.font()).horizontalAdvance(" ") * self.tab_size
         )
-
+        print(f"Updating font {font.family()}")
         self.setFont(font)
 
 
@@ -71,7 +77,7 @@ class OutputTextEdit(QPlainTextEdit):
         Returns : True on processed or False to pass to next event filter.
 
         """
-        if isinstance(obj, OutputTextEdit) and event.type() == QEvent.KeyPress:
+        if isinstance(obj, TextEdit) and event.type() == QEvent.KeyPress:
 
             if (
                 event.key() in (Qt.Key_Plus, Qt.Key_Equal)
