@@ -119,16 +119,15 @@ class EditorDialog(QDialog):
             self.resize(sz)
         workspace = self.settings.value("workspace")
         self.load_workspace_to_editor(workspace)
-
         self.settings.beginGroup("Font")
-
-        font = QFont(
-            self.settings.value("font-name", type=str),
-            self.settings.value("font-size", type=int),
-            self.settings.value("font-weight", type=int),
-            self.settings.value("font-italic", type=bool),
-        )
+        name=self.settings.value("font-name", type=str)
+        size=self.settings.value("font-size", type=int)
+        weight=self.settings.value("font-weight", type=int)
+        italic=self.settings.value("font-italic", type=bool)
         self.settings.endGroup()
+
+        self.font = QFont(name,size,weight,italic)
+        self.update_fonts.emit(self.font)
 
     def save_settings(self)-> None :
         self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
@@ -145,12 +144,12 @@ class EditorDialog(QDialog):
 
 
 
-    def change_font(self):
+    def change_font(self) ->None:
+        """Popup a change font dialog and set all editor fonts"""
         (ok, font) = QFontDialog.getFont( self)
         if ok:
             self.font = font
             self.update_fonts.emit(self.font)
-            print(self.font.family())
 
             
     def debug(self, message: str) -> None:

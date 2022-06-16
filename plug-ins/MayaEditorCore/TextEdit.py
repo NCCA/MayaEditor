@@ -61,7 +61,6 @@ class TextEdit(QPlainTextEdit):
         self.setTabStopDistance(
             QFontMetricsF(self.font()).horizontalAdvance(" ") * self.tab_size
         )
-        print(f"Updating font {font.family()}")
         self.setFont(font)
 
 
