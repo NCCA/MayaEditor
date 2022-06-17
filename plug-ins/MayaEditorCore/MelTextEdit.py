@@ -16,7 +16,6 @@
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
-import jedi
 import maya.api.OpenMaya as OpenMaya
 import maya.mel as mel
 from PySide2.QtCore import *

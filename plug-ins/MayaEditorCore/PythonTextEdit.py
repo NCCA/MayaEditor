@@ -17,7 +17,10 @@
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
-import jedi
+try :
+    import jedi
+except :
+    print("no Jedi installed")
 import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
@@ -111,14 +114,14 @@ class PythonTextEdit(TextEdit):
         event (QEvent) : the toolTip event.
         """
         # Grab the help event and get the position
-        jedi_data = jedi.Script(self.toPlainText())
+        #jedi_data = jedi.Script(self.toPlainText())
         help_event = event
         pos = QPoint(help_event.pos())
         # find text under the cursos and lookup
         cursor = self.cursorForPosition(pos)
         cursor.select(QTextCursor.WordUnderCursor)
-        hint = jedi_data.help(line=cursor.blockNumber() + 1)
-        signatures = jedi_data.call_signatures()
+        hint = True # jedi_data.help(line=cursor.blockNumber() + 1)
+        #signatures = jedi_data.call_signatures()
         # help text is not the best, form to HTML and paragraph
         raw_text = cursor.selectedText()
         if hint:

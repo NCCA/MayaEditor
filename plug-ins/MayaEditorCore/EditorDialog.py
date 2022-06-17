@@ -20,7 +20,6 @@ import os
 import socket
 import sys
 from pathlib import Path
-from turtle import width
 from typing import Any
 
 import maya.api.OpenMaya as OpenMaya

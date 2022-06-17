@@ -21,7 +21,6 @@ import importlib.util
 from turtle import width
 from typing import Any, Callable, Optional, Type
 
-import jedi
 import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
