@@ -28,6 +28,8 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
                                QPlainTextEdit, QTextEdit, QToolTip, QWidget)
 
+from .LineNumberArea import LineNumberArea
+
 
 class TextEdit(QPlainTextEdit):
     """Custom QPlainTextEdit.
@@ -35,8 +37,11 @@ class TextEdit(QPlainTextEdit):
     Custom QPlainTextEdit to allow us to add extra code editor features such as
     shortcuts zooms and line numbers
     """
+    update_output = Signal(str)
+    update_output_html = Signal(str)
+    draw_line = Signal()
 
-    def __init__( self ,read_only : bool =True, show_line_numbers : bool=True ,parent: Optional[Any] = None):
+    def __init__( self ,read_only : bool =True, show_line_numbers : bool=True , code: Optional[str] = None, filename: Optional[str] = None, live=False,parent: Optional[Any] = None):
         """
         Construct our TextEdit.
 
@@ -48,11 +53,47 @@ class TextEdit(QPlainTextEdit):
         self.parent: Callable[[QObject], QObject] = parent
         self.setStyleSheet("background-color: rgb(30,30,30);color : rgb(250,250,250);")
         self.tab_size=4
-        #self.set_editor_fonts(font)
         self.installEventFilter(self)
         self.setReadOnly(read_only)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.filename = filename
+        if code  :
+            self.setPlainText(code)
+        self.execute_selected = False
+        self.installEventFilter(self)
+        self.copyAvailable.connect(self.selection_changed)
+        self.textChanged.connect(self.text_changed)
+        # if we need to display line numbers install events
         self.show_line_numbers=show_line_numbers
+        if self.show_line_numbers :
+            self.line_number_area: LineNumberArea = LineNumberArea(self)
+            self.blockCountChanged.connect(self.update_line_number_area_width)
+            self.updateRequest.connect(self.update_line_number_area)
+            self.cursorPositionChanged.connect(self.highlight_current_line)
+        self.needs_saving = False
+        # hack as textChanged signal always called on set of text
+        self.first_edit = False
+        self.setLineWrapMode(QPlainTextEdit.NoWrap)
+
+    def selection_changed(self, state):
+        """Signal called when text is selected.
+
+        This is used to set the flag in the editor so if we have selected code we
+        only execute that rather than the whole file.
+        """
+        self.execute_selected = state
+
+    def text_changed(self):
+        """Signal called when text changed.
+
+        When the initial text is set this signal is executed so add
+        logic to ensure needs saving only gets set on 2nd call and beyond.
+        """
+        if self.first_edit == False:
+            self.first_edit = True
+        else:
+            self.needs_saving = True
+
 
     @Slot(QFont)
     def set_editor_fonts(self, font):
@@ -68,8 +109,10 @@ class TextEdit(QPlainTextEdit):
         """Event filter for key events.
 
         We filter different keyboard combinations for shortcuts here at present.
+        Ctrl (Command mac) + S : save file.
         Ctrl (Command mac) + + or = : zoom in.
         Ctrl (Command mac) + - : zoom out.
+        Ctrl (Command mac) + G : goto line
         Parameters :
         obj (QObject) : the object passing the event.
         event (QEvent) : the event to be processed.
@@ -77,8 +120,11 @@ class TextEdit(QPlainTextEdit):
 
         """
         if isinstance(obj, TextEdit) and event.type() == QEvent.KeyPress:
-
-            if (
+            
+            if event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
+                self.save_file()
+                return True
+            elif (
                 event.key() in (Qt.Key_Plus, Qt.Key_Equal)
                 and event.modifiers() == Qt.ControlModifier
             ):
@@ -107,7 +153,6 @@ class TextEdit(QPlainTextEdit):
         event (QEvent) : the event to be processed.
         Returns :  True is event is processed here else False to pass on.
         """
-    
         if event.type() is QEvent.Wheel:
             if event.modifiers() == Qt.ControlModifier:
                 if event.delta() > 0:
@@ -117,6 +162,7 @@ class TextEdit(QPlainTextEdit):
             return True
         else:
             return QPlainTextEdit.event(self, event)
+
 
 
     def goto_line(self, line_number: int = 0) -> None:
@@ -144,6 +190,33 @@ class TextEdit(QPlainTextEdit):
         cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
         self.setTextCursor(cursor)
 
+
+    def save_file(self):
+        """Save the current editor file.
+
+        This is called from the event filter or menu when the file is to be saved.
+        It will check to see if the file is called untitled.py if so this will be an unsaved file so will popup a file save dialog, if this is canceled False will be returned else true for a saved file.
+
+        Returns : True if saved else False to flag cancel was selected.
+        """
+        if self.filename == "untitled.txt":
+            filename, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save As",
+                "",
+                ("All Files (*.*)"),
+            )
+            if filename is None:
+                return False
+            else:
+                self.filename = filename
+        # Now we have a filename save
+        with open(self.filename, "w") as code_file:
+            code_file.write(self.toPlainText())
+        self.needs_saving = False
+        return True
+
+
     @Slot(str)
     def append_plain_text(self,text : str) :
         self.moveCursor(QTextCursor.End)
@@ -161,4 +234,85 @@ class TextEdit(QPlainTextEdit):
         cursor=self.textCursor()
  #       cursor.insertHtml('<hr>')
         self.appendHtml('<hr>')
+
+
+    def line_number_area_width(self):
+        """Get the size of the line area.
+
+        This calculates the line area size based on Font metrics.
+
+        Returns : size of the space needed for line area.
+        """
+        digits = 1
+        count = max(1, self.blockCount())
+        while count >= 10:
+            count /= 10
+            digits += 1
+        space = 8 + self.fontMetrics().width("9") * digits
+        return space
+
+    def update_line_number_area_width(self, _):
+        """Update the line area width."""
+        self.setViewportMargins(self.line_number_area_width(), 0, 0, 0)
+
+    def update_line_number_area(self, rect, dy):
+        """Update the Line area numbers."""
+        if dy:
+            self.line_number_area.scroll(0, dy)
+        else:
+            self.line_number_area.update(
+                0, rect.y(), self.line_number_area.width(), rect.height()
+            )
+
+        if rect.contains(self.viewport().rect()):
+            self.update_line_number_area_width(0)
+
+    def resizeEvent(self, event):
+        """Event called on editor resize."""
+        super().resizeEvent(event)
+        if self.show_line_numbers :
+            cr = self.contentsRect()
+            self.line_number_area.setGeometry(
+                QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
+            )
+
+    def lineNumberAreaPaintEvent(self, event):
+        """Paint Event for the line number area."""
+        mypainter = QPainter(self.line_number_area)
+        mypainter.setFont(self.font())
+        mypainter.fillRect(event.rect(), QColor(43, 43, 43))
+
+        block = self.firstVisibleBlock()
+        blockNumber = block.blockNumber()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        bottom = top + self.blockBoundingRect(block).height()
+
+        # Just to make sure I use the right font
+        height = self.fontMetrics().height()
+        while block.isValid() and (top <= event.rect().bottom()):
+            if block.isVisible() and (bottom >= event.rect().top()):
+                number = str(blockNumber + 1) + " "
+                mypainter.setPen(Qt.yellow)
+                mypainter.drawText(
+                    0, top, self.line_number_area.width(), height, Qt.AlignRight, number
+                )
+
+            block = block.next()
+            top = bottom
+            bottom = top + self.blockBoundingRect(block).height()
+            blockNumber += 1
+
+    def highlight_current_line(self):
+        """Highlight the current line."""
+        extraSelections = []
+        if not self.isReadOnly():
+            selection = QTextEdit.ExtraSelection()
+            lineColor = QColor(45, 45, 45)
+            selection.format.setBackground(lineColor)
+            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.cursor = self.textCursor()
+            selection.cursor.clearSelection()
+            extraSelections.append(selection)
+        self.setExtraSelections(extraSelections)
+
 
