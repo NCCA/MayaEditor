@@ -26,7 +26,7 @@ class LineNumberArea(QWidget):
         """Create a new LineNumberArea for our Editor.
 
         Parameters :
-        editor (PlainTextEdit) : The editor to add line numbers to
+        editor (TextEdit) : The editor to add line numbers to
         """
         super().__init__(editor)
         self.code_editor = editor

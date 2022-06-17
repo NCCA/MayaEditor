@@ -18,6 +18,7 @@ This is the base class of all the editor text edits
 
 """
 import importlib.util
+from turtle import width
 from typing import Any, Callable, Optional, Type
 
 import jedi
@@ -233,12 +234,12 @@ class TextEdit(QPlainTextEdit):
 
         Returns : size of the space needed for line area.
         """
-        digits = 1
+        digits = 2
         count = max(1, self.blockCount())
         while count >= 10:
             count /= 10
             digits += 1
-        space = 8 + self.fontMetrics().width("9") * digits
+        space =  self.fontMetrics().averageCharWidth() * digits
         return space
 
     def update_line_number_area_width(self, _):
@@ -279,12 +280,13 @@ class TextEdit(QPlainTextEdit):
 
         # Just to make sure I use the right font
         height = self.fontMetrics().height()
+        width= self.fontMetrics().averageCharWidth()
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1) + " "
                 mypainter.setPen(Qt.yellow)
                 mypainter.drawText(
-                    0, top, self.line_number_area.width(), height, Qt.AlignRight, number
+                    width, top, self.line_number_area.width(), height, Qt.AlignRight, number
                 )
 
             block = block.next()

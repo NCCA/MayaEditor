@@ -474,14 +474,13 @@ class EditorDialog(QDialog):
             self.open_files.takeTopLevelItem(0)
 
     def create_live_editors(self):
-        editor = PythonTextEdit(code="", filename="live_window", live=True, parent=self)
+        editor = PythonTextEdit(code="", filename="live_window", live=True, read_only=False, parent=self)
         # wire up editor signal to output window
         editor.update_output.connect(self.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_window.append_html)
         editor.draw_line.connect(self.output_window.append_line)
-        
+        editor.set_editor_fonts(self.font)        
         self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
-        #self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
         item = QTreeWidgetItem(self.open_files)  # type: ignore
@@ -492,6 +491,7 @@ class EditorDialog(QDialog):
         editor.update_output.connect(self.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_window.append_html)
         editor.draw_line.connect(self.output_window.append_line)
+        editor.set_editor_fonts(self.font)        
 
         self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
         #self.editor_tab.setTabsClosable(False)
