@@ -37,7 +37,6 @@ def editor() -> None:
         "MayaEditorCore.TextEdit",
         "MayaEditorCore.LineNumberArea",
         "MayaEditorCore.MelTextEdit",
-        "MayaEditorCore.PlainTextEdit",
         
     )
     # query the MayaEditor module file for location of source
@@ -52,7 +51,6 @@ def editor() -> None:
     import MayaEditorCore
 
     MayaEditorCore.EditorDialog()
-
 
 
 editor()

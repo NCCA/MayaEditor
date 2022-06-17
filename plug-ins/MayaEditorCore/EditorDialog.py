@@ -39,7 +39,6 @@ from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar
-from .PlainTextEdit import PlainTextEdit
 from .PythonTextEdit import PythonTextEdit
 from .TextEdit import TextEdit
 from .Workspace import Workspace
@@ -384,16 +383,20 @@ class EditorDialog(QDialog):
                     editor = MelTextEdit(code_file.read(), short_name)
                     icon = self.mel_icon
                 else :
-                    editor = PlainTextEdit(code_file.read(),short_name)
+                    editor = TextEdit(code=code_file.read(),filename=code_file_name,
+                    show_line_numbers=True,read_only=False)
                     icon = self.text_icon
-                    
-                    self.output_window.appendHtml("<p/><b>Wrong extension for file loading as text</b>")
+                    editor.set_editor_fonts(self.font)
+              
                 # connect up the editor to the output window and run menu if code
                 if path.suffix  in (".mel",".py") :
                     editor.update_output.connect(self.output_window.append_plain_text)
                     editor.update_output_html.connect(self.output_window.append_html)
                     editor.draw_line.connect(self.output_window.draw_line)
                     self.tool_bar.add_to_active_file_list(short_name)
+                
+                self.update_fonts.connect(editor.set_editor_fonts)
+
 
                 # add to the tab
                 tab = self.editor_tab

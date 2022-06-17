@@ -41,7 +41,7 @@ class TextEdit(QPlainTextEdit):
     update_output_html = Signal(str)
     draw_line = Signal()
 
-    def __init__( self ,read_only : bool =True, show_line_numbers : bool=True , code: Optional[str] = None, filename: Optional[str] = None, live=False,parent: Optional[Any] = None):
+    def __init__( self ,read_only : bool =True, show_line_numbers : bool=True , code: Optional[str] = None, filename: Optional[str] = None, parent: Optional[Any] = None):
         """
         Construct our TextEdit.
 
@@ -59,10 +59,7 @@ class TextEdit(QPlainTextEdit):
         self.filename = filename
         if code  :
             self.setPlainText(code)
-        self.execute_selected = False
         self.installEventFilter(self)
-        self.copyAvailable.connect(self.selection_changed)
-        self.textChanged.connect(self.text_changed)
         # if we need to display line numbers install events
         self.show_line_numbers=show_line_numbers
         if self.show_line_numbers :
@@ -74,14 +71,8 @@ class TextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
-
-    def selection_changed(self, state):
-        """Signal called when text is selected.
-
-        This is used to set the flag in the editor so if we have selected code we
-        only execute that rather than the whole file.
-        """
-        self.execute_selected = state
+        
+    
 
     def text_changed(self):
         """Signal called when text changed.
@@ -119,8 +110,7 @@ class TextEdit(QPlainTextEdit):
         Returns : True on processed or False to pass to next event filter.
 
         """
-        if isinstance(obj, TextEdit) and event.type() == QEvent.KeyPress:
-            
+        if isinstance(obj, TextEdit) and event.type() == QEvent.KeyPress: 
             if event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
                 self.save_file()
                 return True
