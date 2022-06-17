@@ -269,30 +269,31 @@ class TextEdit(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         """Paint Event for the line number area."""
-        mypainter = QPainter(self.line_number_area)
-        mypainter.setFont(self.font())
-        mypainter.fillRect(event.rect(), QColor(43, 43, 43))
+        if self.show_line_numbers :
+            mypainter = QPainter(self.line_number_area)
+            mypainter.setFont(self.font())
+            mypainter.fillRect(event.rect(), QColor(43, 43, 43))
 
-        block = self.firstVisibleBlock()
-        blockNumber = block.blockNumber()
-        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
-        bottom = top + self.blockBoundingRect(block).height()
-
-        # Just to make sure I use the right font
-        height = self.fontMetrics().height()
-        width= self.fontMetrics().averageCharWidth()
-        while block.isValid() and (top <= event.rect().bottom()):
-            if block.isVisible() and (bottom >= event.rect().top()):
-                number = str(blockNumber + 1) + " "
-                mypainter.setPen(Qt.yellow)
-                mypainter.drawText(
-                    width, top, self.line_number_area.width(), height, Qt.AlignRight, number
-                )
-
-            block = block.next()
-            top = bottom
+            block = self.firstVisibleBlock()
+            blockNumber = block.blockNumber()
+            top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
             bottom = top + self.blockBoundingRect(block).height()
-            blockNumber += 1
+
+            # Just to make sure I use the right font
+            height = self.fontMetrics().height()
+            width= self.fontMetrics().averageCharWidth()
+            while block.isValid() and (top <= event.rect().bottom()):
+                if block.isVisible() and (bottom >= event.rect().top()):
+                    number = str(blockNumber + 1) + " "
+                    mypainter.setPen(Qt.yellow)
+                    mypainter.drawText(
+                        width, top, self.line_number_area.width(), height, Qt.AlignRight, number
+                    )
+
+                block = block.next()
+                top = bottom
+                bottom = top + self.blockBoundingRect(block).height()
+                blockNumber += 1
 
     def highlight_current_line(self):
         """Highlight the current line."""
@@ -306,5 +307,10 @@ class TextEdit(QPlainTextEdit):
             selection.cursor.clearSelection()
             extraSelections.append(selection)
         self.setExtraSelections(extraSelections)
+
+    @Slot(bool)
+    def toggle_line_number(self,state) :
+        self.show_line_numbers  = state
+        self.update()
 
 

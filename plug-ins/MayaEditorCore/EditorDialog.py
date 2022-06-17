@@ -62,6 +62,7 @@ class EditorDialog(QDialog):
     update_output = Signal(str)
     update_output_html = Signal(str)
     update_fonts = Signal(QFont)
+    toggle_line_numbers = Signal(bool)
 
     def __init__(self, parent=get_main_window()):
         """Construct the class.
@@ -103,6 +104,7 @@ class EditorDialog(QDialog):
         # Finally load in settings and create live editors
         self.load_settings()
         self.create_live_editors()
+        self.update_fonts.emit(self.font)
         self.show()
 
         
@@ -235,10 +237,21 @@ class EditorDialog(QDialog):
 
         settings_menu = QMenu("&Settings")
         # Add settings Menu
-        font_menu = QMenu("&Font", self)
+
+        # add font action
+        #font_menu = QMenu("&Font", self)
         change_font_action = QAction("Change Font", self)
         settings_menu.addAction(change_font_action)
         change_font_action.triggered.connect(self.change_font)
+        
+        # show line numbers
+        show_line_numbers_action = QAction("Show Line Numbers", self)
+        settings_menu.addAction(show_line_numbers_action)
+        show_line_numbers_action.toggled.connect(self.show_line_numbers)
+        show_line_numbers_action.setCheckable(True)
+        show_line_numbers_action.setChecked(True)
+
+        # Menu to main menu bar
         self.menu_bar.addMenu(settings_menu)
 
 
@@ -349,6 +362,8 @@ class EditorDialog(QDialog):
         self.open_files.clear() 
         self.create_live_editors()
 
+    def show_line_numbers(self,state) :
+        self.toggle_line_numbers.emit(state)
 
     def open_workspace(self) -> None:
         """Open a new workspace.
@@ -389,15 +404,14 @@ class EditorDialog(QDialog):
                     editor.set_editor_fonts(self.font)
               
                 # connect up the editor to the output window and run menu if code
-                if path.suffix  in (".mel",".py") :
-                    editor.update_output.connect(self.output_window.append_plain_text)
-                    editor.update_output_html.connect(self.output_window.append_html)
-                    editor.draw_line.connect(self.output_window.append_line)
-                    self.tool_bar.add_to_active_file_list(short_name)
+                # if path.suffix  in (".mel",".py") :
+                #     editor.update_output.connect(self.output_window.append_plain_text)
+                #     editor.update_output_html.connect(self.output_window.append_html)
+                #     editor.draw_line.connect(self.output_window.append_line)
+                #     self.tool_bar.add_to_active_file_list(short_name)
                 
-                self.update_fonts.connect(editor.set_editor_fonts)
-
-
+                # self.update_fonts.connect(editor.set_editor_fonts)
+                self.connect_editor_slots(editor)
                 # add to the tab
                 tab = self.editor_tab
                 tab_index = tab.addTab(editor,icon, short_name)  # type: ignore
@@ -476,10 +490,12 @@ class EditorDialog(QDialog):
     def create_live_editors(self):
         editor = PythonTextEdit(code="", filename="live_window", live=True, read_only=False, parent=self)
         # wire up editor signal to output window
-        editor.update_output.connect(self.output_window.append_plain_text)
-        editor.update_output_html.connect(self.output_window.append_html)
-        editor.draw_line.connect(self.output_window.append_line)
-        editor.set_editor_fonts(self.font)        
+        # editor.update_output.connect(self.output_window.append_plain_text)
+        # editor.update_output_html.connect(self.output_window.append_html)
+        # editor.draw_line.connect(self.output_window.append_line)
+        # editor.set_editor_fonts(self.font)       
+        self.connect_editor_slots(editor)
+
         self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
@@ -488,11 +504,11 @@ class EditorDialog(QDialog):
         self.open_files.addTopLevelItem(item)  # type: ignore
         # add the Mel live window
         editor = MelTextEdit(code="", filename="live_window", live=True,read_only=False,show_line_numbers=True, parent=self)
-        editor.update_output.connect(self.output_window.append_plain_text)
-        editor.update_output_html.connect(self.output_window.append_html)
-        editor.draw_line.connect(self.output_window.append_line)
-        editor.set_editor_fonts(self.font)        
-
+        # editor.update_output.connect(self.output_window.append_plain_text)
+        # editor.update_output_html.connect(self.output_window.append_html)
+        # editor.draw_line.connect(self.output_window.append_line)
+        # editor.set_editor_fonts(self.font)        
+        self.connect_editor_slots(editor)
         self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
         #self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
@@ -506,3 +522,13 @@ class EditorDialog(QDialog):
         self.update_fonts.connect(self.output_window.set_editor_fonts)
         self.update_fonts.emit(self.font)
         self.output_window_layout.addWidget(self.output_window)
+
+    def connect_editor_slots(self,editor) :
+        editor.update_output.connect(self.output_window.append_plain_text)
+        editor.update_output_html.connect(self.output_window.append_html)
+        editor.draw_line.connect(self.output_window.append_line)
+        self.update_fonts.connect(editor.set_editor_fonts)
+        self.toggle_line_numbers.connect(editor.toggle_line_number)
+        
+
+
