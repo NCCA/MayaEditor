@@ -259,7 +259,7 @@ class EditorDialog(QDialog):
 
     def new_file(self) -> None:
         """Create a new file tab."""
-        editor = PythonTextEdit("", "untitled.py")
+        editor = PythonTextEdit(code="", filename="untitled.py",read_only=False,show_line_numbers=True,live=False)
         self.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
@@ -377,10 +377,10 @@ class EditorDialog(QDialog):
             with open(code_file_name, "r") as code_file:
                 short_name = str(Path(code_file_name).name)
                 if path.suffix == ".py" :
-                    editor = PythonTextEdit(code_file.read(), short_name)
+                    editor = PythonTextEdit(code=code_file.read(), filename=code_file_name,live=False,show_line_numbers=True,read_only=False)
                     icon = self.python_icon
                 elif path.suffix ==".mel" :
-                    editor = MelTextEdit(code_file.read(), short_name)
+                    editor = MelTextEdit(code=code_file.read(), filename=code_file_name,live=False,show_line_numbers=True,read_only=False)
                     icon = self.mel_icon
                 else :
                     editor = TextEdit(code=code_file.read(),filename=code_file_name,
@@ -392,7 +392,7 @@ class EditorDialog(QDialog):
                 if path.suffix  in (".mel",".py") :
                     editor.update_output.connect(self.output_window.append_plain_text)
                     editor.update_output_html.connect(self.output_window.append_html)
-                    editor.draw_line.connect(self.output_window.draw_line)
+                    editor.draw_line.connect(self.output_window.append_line)
                     self.tool_bar.add_to_active_file_list(short_name)
                 
                 self.update_fonts.connect(editor.set_editor_fonts)
@@ -474,11 +474,11 @@ class EditorDialog(QDialog):
             self.open_files.takeTopLevelItem(0)
 
     def create_live_editors(self):
-        editor = PythonTextEdit("", "live_window", live=True, parent=self)
+        editor = PythonTextEdit(code="", filename="live_window", live=True, parent=self)
         # wire up editor signal to output window
         editor.update_output.connect(self.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_window.append_html)
-        editor.draw_line.connect(self.output_window.draw_line)
+        editor.draw_line.connect(self.output_window.append_line)
         
         self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
         #self.editor_tab.setTabsClosable(False)
@@ -488,10 +488,10 @@ class EditorDialog(QDialog):
         item.setText(0, "Python live_window")
         self.open_files.addTopLevelItem(item)  # type: ignore
         # add the Mel live window
-        editor = MelTextEdit("", "live_window", live=True, parent=self)
+        editor = MelTextEdit(code="", filename="live_window", live=True,read_only=False,show_line_numbers=True, parent=self)
         editor.update_output.connect(self.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_window.append_html)
-        editor.draw_line.connect(self.output_window.draw_line)
+        editor.draw_line.connect(self.output_window.append_line)
 
         self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
         #self.editor_tab.setTabsClosable(False)

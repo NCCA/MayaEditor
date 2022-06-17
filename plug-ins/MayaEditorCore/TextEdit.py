@@ -219,7 +219,7 @@ class TextEdit(QPlainTextEdit):
         cursor.insertHtml(f"<p><pre>{text}<pre></p>")
 
     @Slot()
-    def draw_line(self) :
+    def append_line(self) :
         self.moveCursor(QTextCursor.End)
         cursor=self.textCursor()
  #       cursor.insertHtml('<hr>')
