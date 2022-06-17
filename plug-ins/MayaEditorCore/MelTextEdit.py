@@ -82,8 +82,8 @@ class MelTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return False
-        else:
+                return super().eventFilter(obj,event)
+        else: 
             return False
 
     def event(self, event):

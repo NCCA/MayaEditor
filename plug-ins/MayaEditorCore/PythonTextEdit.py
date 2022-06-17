@@ -64,9 +64,6 @@ class PythonTextEdit(TextEdit):
         We filter different keyboard combinations for shortcuts here at present.
         Ctrl (Command mac) + Return : execute code.
         Ctrl (Command mac) + S : save file.
-        Ctrl (Command mac) + + or = : zoom in.
-        Ctrl (Command mac) + - : zoom out.
-        Ctrl (Command mac) + G : goto line
         F5 : run current file
         Parameters :
         obj (QObject) : the object passing the event.
@@ -85,9 +82,8 @@ class PythonTextEdit(TextEdit):
             elif event.key() == Qt.Key_S and event.modifiers() == Qt.ControlModifier:
                 self.save_file()
                 return True
-    
             else:
-                return False
+                return super().eventFilter(obj,event)
         else:
             return False
 
@@ -104,15 +100,8 @@ class PythonTextEdit(TextEdit):
         if event.type() is QEvent.ToolTip:
             self.process_tooltip(event)
             return True
-        elif event.type() is QEvent.Wheel:
-            if event.modifiers() == Qt.ControlModifier:
-                if event.delta() > 0:
-                    self.zoomIn(1)
-                else:
-                    self.zoomOut(1)
-            return True
         else:
-            return QPlainTextEdit.event(self, event)
+            return TextEdit.event(self, event)
 
     def process_tooltip(self, event):
         """Process the tooltip event.

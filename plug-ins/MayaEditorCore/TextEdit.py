@@ -129,7 +129,7 @@ class TextEdit(QPlainTextEdit):
                 self.goto_line()
                 return True
             else:
-                return False
+                return QPlainTextEdit.event(self, event)
         else:
             return False
 
@@ -149,7 +149,7 @@ class TextEdit(QPlainTextEdit):
                     self.zoomIn(1)
                 else:
                     self.zoomOut(1)
-            return True
+                return True
         else:
             return QPlainTextEdit.event(self, event)
 
