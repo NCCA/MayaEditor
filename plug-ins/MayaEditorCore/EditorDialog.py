@@ -64,12 +64,15 @@ class EditorDialog(QDialog):
     update_fonts = Signal(QFont)
     toggle_line_numbers = Signal(bool)
 
-    def __init__(self, parent=get_main_window()):
+    def __init__(self, parent=None):
         """Construct the class.
 
         Parameters :
         parent (QWidget) : the Maya parent window
         """
+        if parent is None :
+            parent=get_main_window()
+        
         super().__init__(parent)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
