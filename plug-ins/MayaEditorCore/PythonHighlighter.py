@@ -35,7 +35,6 @@ def _create_format(style_colour: str, style: str = "") -> QTextCharFormat:
     new_format.setForeground(QBrush(colour))
     if "bold" in style:
         new_format.setFontWeight(QFont.Bold)  # type: ignore
-        print(f"Weight {QFont.Bold=}")
     if "italic" in style:
         new_format.setFontItalic(True)
 
@@ -47,7 +46,6 @@ def _create_format_rgb(style_colour: QColor, style: str = "") -> QTextCharFormat
     new_format.setForeground(QBrush(style_colour))
     if "bold" in style:
         new_format.setFontWeight(QFont.Bold)  # type: ignore
-        print(f"Weight {QFont.Bold=}")
     if "italic" in style:
         new_format.setFontItalic(True)
 

@@ -20,7 +20,6 @@ import os
 import socket
 import sys
 from pathlib import Path
-from turtle import width
 from typing import Any
 
 import maya.api.OpenMaya as OpenMaya
@@ -68,11 +67,13 @@ class EditorDialog(QDialog):
         """Construct the class.
 
         Parameters :
-        parent (QWidget) : the Maya parent window
+        parent (QWidget) : the Maya parent window Note this is set to None so we can use the get_main_window() function in maya
+        If we run standalone we need to pass in a main window instance (see the EditorStandalone.py module)
         """
+
         if parent is None :
             parent=get_main_window()
-        
+
         super().__init__(parent)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
@@ -119,8 +120,8 @@ class EditorDialog(QDialog):
         
         splitter_settings = self.settings.value("vertical_splitter")
         self.vertical_splitter.restoreState(splitter_settings)  # type: ignore
-        if sz := self.settings.value("size"):
-            self.resize(sz)
+        sz = self.settings.value("size",)
+        self.resize(self.settings.value("size",QSize(1024,720)))
         workspace = self.settings.value("workspace")
         self.load_workspace_to_editor(workspace)
         self.settings.beginGroup("Font")
