@@ -130,6 +130,7 @@ class EditorDialog(QDialog):
         self.resize(self.settings.value("size", QSize(1024, 720)))
         workspace = self.settings.value("workspace")
         self.load_workspace_to_editor(workspace)
+
         self.settings.beginGroup("Font")
         name = self.settings.value("font-name", type=str)
         size = self.settings.value("font-size", type=int)
@@ -208,6 +209,7 @@ class EditorDialog(QDialog):
         """
         OpenMaya.MMessage.removeCallback(self.callback_id)
         self.save_settings()
+        self.workspace.close()
         super(EditorDialog, self).closeEvent(event)
 
     def create_menu_bar(self) -> None:
@@ -432,6 +434,7 @@ class EditorDialog(QDialog):
                 if path.suffix in (".mel", ".py"):
                     self.tool_bar.add_to_active_file_list(short_name)
 
+                self.workspace.add_file(code_file_name)
                 # self.update_fonts.connect(editor.set_editor_fonts)
                 self.connect_editor_slots(editor)
                 # add to the tab
@@ -457,6 +460,8 @@ class EditorDialog(QDialog):
         if self.workspace.load(file_name):
             for code_file_name in self.workspace.files:
                 self.create_editor_and_load_files(code_file_name)
+        # as same code is used for loading new files on initial ws load we set this to true
+        self.workspace.is_saved = True
 
     @Slot()
     def tool_bar_run_clicked(self):
@@ -501,15 +506,17 @@ class EditorDialog(QDialog):
             path = self.sidebar_models.file_system_model.filePath(index)
             self.create_editor_and_load_files(path)
 
-    def remove_from_open_files(self, filename):
+    def remove_from_open_files(self, filename: str) -> None:
         """Remove filename from sidebar.
         Parameters :
         filename (str) : the name to search for and remove
         """
         self.sidebar_models.remove_from_workspace(filename)
         self.tool_bar.remove_from_active_file_list(filename)
+        # remove from workspace
+        self.workspace.remove_file(filename)
 
-    def create_live_editors(self):
+    def create_live_editors(self) -> None:
         editor = PythonTextEdit(
             code="", filename="live_window", live=True, read_only=False, parent=self
         )

@@ -16,6 +16,7 @@
 
 Contains all the code an functions for creating, reading and writing workspace data.
 """
+import enum
 import json
 from pathlib import Path
 from typing import List
@@ -26,7 +27,6 @@ from PySide2.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 class Workspace:
     """Class to manage workspaces in editor."""
-            
 
     def __init__(self):
         """Workspace class to hold the data about the current workspaces."""
@@ -34,7 +34,6 @@ class Workspace:
         self.files: List[str] = []
         self.is_saved: bool = True
         self.file_name: str = ""
-         
 
     def add_file(self, file: str) -> None:
         """Add a file to the workspace.
@@ -44,9 +43,23 @@ class Workspace:
         Parameters :
         file (str) : the full path to the file to be saved.
         """
-        self.files.append(file)
+        if file not in self.files:
+            self.files.append(file)
         self.is_saved = False
 
+    def remove_file(self, file: str) -> None:
+        """
+        Remove the file from the workspace, it may be a partial name so need to find it
+        """
+        try:
+            for index, name in enumerate(self.files):
+                if file in name:
+                    print(f"{index} {name} {file}")
+                    del self.files[index]
+                    self.is_saved = False
+                    return
+        except ValueError:
+            print(f"file {file} not found in workspace")
 
     def save(self, filename: str) -> None:
         """Save the workspace.
@@ -64,7 +77,6 @@ class Workspace:
             json.dump(workspace, indent=4, fp=workspace_file)
         self.is_saved = True
 
-
     def load(self, filename: str) -> bool:
         """Load in a new workspace.
 
@@ -76,8 +88,8 @@ class Workspace:
         self.files.clear()
         self.file_name = filename
         path = Path(filename)
-        if (path.is_file()) :
-            try :
+        if path.is_file():
+            try:
                 with open(filename, "r") as workspace_file:
                     workspace = json.load(workspace_file)
                     self.name = workspace["name"]
@@ -85,19 +97,33 @@ class Workspace:
                     return True
             except:
                 print("problem loading last workspace")
-                self.name=""
-                self.files=[]
-                self.file_name=""
+                self.name = ""
+                self.files = []
+                self.file_name = ""
                 return False
-        else :
+        else:
             return False
-
 
     def new(self) -> None:
         """Create a new workspace.
 
         We check to ensure that the current workspace has been saved before loading a new one.
         """
+        if self.check_saved():
+            text, ok = QInputDialog().getText(
+                None,  # type: ignore
+                "New Workspace",
+                "Workspace:",
+                QLineEdit.EchoMode.Normal,
+            )
+
+            if ok and text:
+                self.files.clear()
+                self.name = text
+                self.file_name = ""
+                self.is_saved = False
+
+    def check_saved(self) -> bool:
         if self.is_saved is not True:
             msg_box = QMessageBox()
             msg_box.setWindowTitle("Warning!")
@@ -108,22 +134,13 @@ class Workspace:
             )
             msg_box.setDefaultButton(QMessageBox.Save)
             ret = msg_box.exec_()
+
             if ret == QMessageBox.Save:
                 self.save(self.file_name)
-            elif ret == QMessageBox.Discard:
-                pass
-            elif ret == QMessageBox.Cancel:
-                return
+                return True
+            else:
+                return False
 
-        text, ok = QInputDialog().getText(
-            None,  # type: ignore
-            "New Workspace",
-            "Workspace:",
-            QLineEdit.EchoMode.Normal,
-        )
-
-        if ok and text:
-            self.files.clear()
-            self.name = text
-            self.file_name = ""
-            self.is_saved = False
+    def close(self):
+        print("closing workspace")
+        self.check_saved()
