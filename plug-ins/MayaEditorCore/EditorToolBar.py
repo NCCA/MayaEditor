@@ -65,3 +65,8 @@ class EditorToolBar(QToolBar):
     def add_to_active_file_list(self, filename: str) -> None:
         """Add filename to run project combo."""
         self.active_project_file.addItem(filename)
+
+    def remove_from_active_file_list(self, filename : str) -> None :
+        print(f"{filename}")
+        index= self.active_project_file.findText(filename,Qt.MatchContains)
+        self.active_project_file.removeItem(index)

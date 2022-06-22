@@ -41,18 +41,27 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QTreeWidget" name="open_files">
+         <widget class="QComboBox" name="sidebar_selector">
+          <item>
+           <property name="text">
+            <string>Workspace</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>File System</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeView" name="sidebar_treeview">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>1</verstretch>
            </sizepolicy>
           </property>
-          <column>
-           <property name="text">
-            <string notr="true">1</string>
-           </property>
-          </column>
          </widget>
         </item>
        </layout>

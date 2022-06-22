@@ -31,6 +31,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtUiTools import *
 from PySide2.QtWidgets import *
+
 # Note this is from Maya not pyside so type hints not generated
 from shiboken2 import wrapInstance  # type: ignore
 
@@ -39,6 +40,7 @@ from .EditorToolBar import EditorToolBar
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar
 from .PythonTextEdit import PythonTextEdit
+from .SidebarModels import SideBarModels
 from .TextEdit import TextEdit
 from .Workspace import Workspace
 
@@ -49,7 +51,7 @@ def get_main_window() -> Any:
     Grab the maya main window
     Returns : QWidget of the MayaMainWindow
     """
-    window =  omui.MQtUtil.mainWindow()
+    window = omui.MQtUtil.mainWindow()
     return wrapInstance(int(window), QWidget)
 
 
@@ -58,6 +60,7 @@ class EditorDialog(QDialog):
 
     Inherits from QDialog and loads the ui from files.
     """
+
     update_output = Signal(str)
     update_output_html = Signal(str)
     update_fonts = Signal(QFont)
@@ -70,9 +73,9 @@ class EditorDialog(QDialog):
         parent (QWidget) : the Maya parent window Note this is set to None so we can use the get_main_window() function in maya
         If we run standalone we need to pass in a main window instance (see the EditorStandalone.py module)
         """
-
-        if parent is None :
-            parent=get_main_window()
+        # do this here so we can run standalone or in maya
+        if parent is None:
+            parent = get_main_window()
 
         super().__init__(parent)
         # Register the callback to filter the outputs to out output window
@@ -88,18 +91,21 @@ class EditorDialog(QDialog):
         self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
         self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
         self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
-        
+
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
         # as other things may depend on this create early
         self.create_output_window()
         self.create_tool_bar()
         self.create_menu_bar()
+        self.sidebar_models = SideBarModels(self)
+        self.sidebar_treeview.setModel(self.sidebar_models.active_model)
+        self.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
         # connect tab close event
         self.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
         # setup file view sidebar
-        self.open_files.setHeaderHidden(True)
-        self.open_files.itemClicked.connect(self.file_view_changed)
+        self.sidebar_treeview.setHeaderHidden(True)
+        self.sidebar_treeview.clicked.connect(self.file_view_changed)
         # create workspace
         self.workspace = Workspace()
         # connect output window signals
@@ -111,52 +117,49 @@ class EditorDialog(QDialog):
         self.update_fonts.emit(self.font)
         self.show()
 
-        
-
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
         splitter_settings = self.settings.value("splitter")
         self.editor_splitter.restoreState(splitter_settings)  # type: ignore
-        
+
         splitter_settings = self.settings.value("vertical_splitter")
         self.vertical_splitter.restoreState(splitter_settings)  # type: ignore
-        sz = self.settings.value("size",)
-        self.resize(self.settings.value("size",QSize(1024,720)))
+        sz = self.settings.value(
+            "size",
+        )
+        self.resize(self.settings.value("size", QSize(1024, 720)))
         workspace = self.settings.value("workspace")
         self.load_workspace_to_editor(workspace)
         self.settings.beginGroup("Font")
-        name=self.settings.value("font-name", type=str)
-        size=self.settings.value("font-size", type=int)
-        weight=self.settings.value("font-weight", type=int)
-        italic=self.settings.value("font-italic", type=bool)
+        name = self.settings.value("font-name", type=str)
+        size = self.settings.value("font-size", type=int)
+        weight = self.settings.value("font-weight", type=int)
+        italic = self.settings.value("font-italic", type=bool)
         self.settings.endGroup()
 
-        self.font = QFont(name,size,weight,italic)
+        self.font = QFont(name, size, weight, italic)
         self.update_fonts.emit(self.font)
 
-    def save_settings(self)-> None :
+    def save_settings(self) -> None:
         self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
         self.settings.setValue("vertical_splitter", self.vertical_splitter.saveState())  # type: ignore
         self.settings.setValue("size", self.size())
         self.settings.setValue("workspace", self.workspace.file_name)
         self.settings.beginGroup("Font")
-        
+
         self.settings.setValue("font-name", self.font.family())
         self.settings.setValue("font-size", self.font.pointSize())
         self.settings.setValue("font-weight", self.font.weight())
         self.settings.setValue("font-italic", self.font.italic())
         self.settings.endGroup()
 
-
-
-    def change_font(self) ->None:
+    def change_font(self) -> None:
         """Popup a change font dialog and set all editor fonts"""
-        (ok, font) = QFontDialog.getFont( self)
+        (ok, font) = QFontDialog.getFont(self)
         if ok:
             self.font = font
             self.update_fonts.emit(self.font)
 
-            
     def debug(self, message: str) -> None:
         self.output_window.appendHtml(
             f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>'
@@ -170,30 +173,30 @@ class EditorDialog(QDialog):
         client_data : not used
         """
         colour = "white"
-        message_prefix=""
+        message_prefix = ""
         if mtype == OpenMaya.MCommandMessage.kHistory:
             colour = "lightblue"
-            message_prefix="History : "
+            message_prefix = "History : "
         elif mtype == OpenMaya.MCommandMessage.kDisplay:
             colour = "yellow"
         elif mtype == OpenMaya.MCommandMessage.kInfo:
             colour = "white"
-            message_prefix="Info : "
+            message_prefix = "Info : "
 
         elif mtype == OpenMaya.MCommandMessage.kWarning:
             colour = "green"
-            message_prefix="Warning : "
+            message_prefix = "Warning : "
         elif mtype == OpenMaya.MCommandMessage.kError:
             colour = "red"
-            message_prefix="Error : "
+            message_prefix = "Error : "
 
         elif mtype == OpenMaya.MCommandMessage.kResult:
             colour = "lightblue"
-            message_prefix="Result :"
+            message_prefix = "Result :"
 
         # this moves to the end so we don't get double new lines etc
-        #self.output_window.moveCursor(QTextCursor.End)
-        html=f'<p style="color:{colour}"><pre>{message_prefix}{message}</pre></p>'
+        # self.output_window.moveCursor(QTextCursor.End)
+        html = f'<p style="color:{colour}"><pre>{message_prefix}{message}</pre></p>'
         self.update_output_html.emit(html)
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -243,11 +246,11 @@ class EditorDialog(QDialog):
         # Add settings Menu
 
         # add font action
-        #font_menu = QMenu("&Font", self)
+        # font_menu = QMenu("&Font", self)
         change_font_action = QAction("Change Font", self)
         settings_menu.addAction(change_font_action)
         change_font_action.triggered.connect(self.change_font)
-        
+
         # show line numbers
         show_line_numbers_action = QAction("Show Line Numbers", self)
         settings_menu.addAction(show_line_numbers_action)
@@ -257,8 +260,6 @@ class EditorDialog(QDialog):
 
         # Menu to main menu bar
         self.menu_bar.addMenu(settings_menu)
-
-
 
         self.main_grid_layout.setMenuBar(self.menu_bar)  # type: ignore
 
@@ -276,7 +277,13 @@ class EditorDialog(QDialog):
 
     def new_file(self) -> None:
         """Create a new file tab."""
-        editor = PythonTextEdit(code="", filename="untitled.py",read_only=False,show_line_numbers=True,live=False)
+        editor = PythonTextEdit(
+            code="",
+            filename="untitled.py",
+            read_only=False,
+            show_line_numbers=True,
+            live=False,
+        )
         self.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
@@ -290,8 +297,6 @@ class EditorDialog(QDialog):
         # Add to main dialog
         self.output_dock.setWidget(self.output_tool_bar)  # type: ignore
 
-
-
     def tab_close_requested(self, index: int) -> None:
         """Slot called when a tab close is pressed.
 
@@ -303,8 +308,8 @@ class EditorDialog(QDialog):
         editor: PythonTextEdit = tab.widget(index)  # type: ignore
         file_name = tab.tabText(index)
         # don't close live editors
-        if file_name in ["Python live_window","Mel live_window"] :
-            return 
+        if file_name in ["Python live_window", "Mel live_window"]:
+            return
         if editor.needs_saving is not True:
             tab.removeTab(index)
             self.remove_from_open_files(file_name)
@@ -342,7 +347,7 @@ class EditorDialog(QDialog):
         tab = self.editor_tab  # type: ignore
         tab.clear()
         self.workspace.new()
-        self.open_files.clear() 
+        self.sidebar_treeview.clear()
         self.create_live_editors()
 
     def save_workspace(self) -> None:
@@ -363,10 +368,10 @@ class EditorDialog(QDialog):
 
         tab = self.editor_tab  # type: ignore
         tab.clear()
-        self.open_files.clear() 
+        self.sidebar_treeview.clear()
         self.create_live_editors()
 
-    def show_line_numbers(self,state) :
+    def show_line_numbers(self, state):
         self.toggle_line_numbers.emit(state)
 
     def open_workspace(self) -> None:
@@ -384,52 +389,64 @@ class EditorDialog(QDialog):
             self.settings.setValue("workspace", file_name)
             self.load_workspace_to_editor(file_name)
 
-    def create_editor_and_load_files(self,code_file_name : str) -> None :
+    def create_editor_and_load_files(self, code_file_name: str) -> None:
         """This method creates new editors and links the different elements.
-        
+
         Parameters.
             code_file_name (str) : full path to the file to load will be truncated to short name for the tabs be getting the last name / extension
-        
+
         """
         path = Path(code_file_name)
-        if (path.is_file()) :
+        if path.is_file():
             with open(code_file_name, "r") as code_file:
                 short_name = str(Path(code_file_name).name)
-                if path.suffix == ".py" :
-                    editor = PythonTextEdit(code=code_file.read(), filename=code_file_name,live=False,show_line_numbers=True,read_only=False)
+                if path.suffix == ".py":
+                    editor = PythonTextEdit(
+                        code=code_file.read(),
+                        filename=code_file_name,
+                        live=False,
+                        show_line_numbers=True,
+                        read_only=False,
+                    )
                     icon = self.python_icon
-                elif path.suffix ==".mel" :
-                    editor = MelTextEdit(code=code_file.read(), filename=code_file_name,live=False,show_line_numbers=True,read_only=False)
+                elif path.suffix == ".mel":
+                    editor = MelTextEdit(
+                        code=code_file.read(),
+                        filename=code_file_name,
+                        live=False,
+                        show_line_numbers=True,
+                        read_only=False,
+                    )
                     icon = self.mel_icon
-                else :
-                    editor = TextEdit(code=code_file.read(),filename=code_file_name,
-                    show_line_numbers=True,read_only=False)
+                else:
+                    editor = TextEdit(
+                        code=code_file.read(),
+                        filename=code_file_name,
+                        show_line_numbers=True,
+                        read_only=False,
+                    )
                     icon = self.text_icon
                     editor.set_editor_fonts(self.font)
-              
-                # connect up the editor to the output window and run menu if code
-                # if path.suffix  in (".mel",".py") :
-                #     editor.update_output.connect(self.output_window.append_plain_text)
-                #     editor.update_output_html.connect(self.output_window.append_html)
-                #     editor.draw_line.connect(self.output_window.append_line)
-                #     self.tool_bar.add_to_active_file_list(short_name)
-                
+
+                # Add to the active files to run
+                if path.suffix in (".mel", ".py"):
+                    self.tool_bar.add_to_active_file_list(short_name)
+
                 # self.update_fonts.connect(editor.set_editor_fonts)
                 self.connect_editor_slots(editor)
                 # add to the tab
                 tab = self.editor_tab
-                tab_index = tab.addTab(editor,icon, short_name)  # type: ignore
+                tab_index = tab.addTab(editor, icon, short_name)  # type: ignore
                 tab.setTabsClosable(True)
                 tab.setCurrentIndex(tab_index)
                 # add to the file view and run menu
-                item = QTreeWidgetItem(self.open_files)  # type: ignore
-                item.setText(0, short_name)
-                self.open_files.addTopLevelItem(item)  # type: ignore
-                
-        else :
-            self.output_window.appendHtml(f'<b><p style="color:red">Error :</p></b><p>Problem loading  file {code_file_name} from project {file_name} perhaps it has been removed</p>'
-)
+                self.sidebar_models.append_to_workspace(short_name)
+                self.update_fonts.emit(self.font)
 
+        else:
+            self.output_window.appendHtml(
+                f'<b><p style="color:red">Error :</p></b><p>Problem loading  file {code_file_name} from project perhaps it has been removed</p>'
+            )
 
     def load_workspace_to_editor(self, file_name: str) -> None:
         """Load in the actual workspace data to the editor tab.
@@ -437,7 +454,7 @@ class EditorDialog(QDialog):
         Parameters :
         file_name (str) : full path to the editor file to load
         """
-        if self.workspace.load(file_name) :
+        if self.workspace.load(file_name):
             for code_file_name in self.workspace.files:
                 self.create_editor_and_load_files(code_file_name)
 
@@ -466,73 +483,84 @@ class EditorDialog(QDialog):
                 break
         self.editor_tab.widget(index).execute_code()
 
-    def file_view_changed(self, item):
+    def file_view_changed(self, index):
         """Update the editor tab based on the new item."""
-        text = item.text(0)
-        # first find the index of the active tab
-        tab = self.editor_tab  # type: ignore
-        index = 0
-        for t in range(0, tab.count() + 1):
-            if text == tab.tabText(t):
-                index = t
-                break
-        tab.setCurrentIndex(t)
+        selector_index = self.sidebar_selector.currentIndex()
+        if selector_index == 0:
+            item = self.sidebar_models.workspace.itemFromIndex(index)  # item.text(0)
+            text = item.text()
+            # first find the index of the active tab
+            tab = self.editor_tab  # type: ignore
+            index = 0
+            for t in range(0, tab.count() + 1):
+                if text == tab.tabText(t):
+                    index = t
+                    break
+            tab.setCurrentIndex(t)
+        elif selector_index == 1:  # file system view
+            path = self.sidebar_models.file_system_model.filePath(index)
+            self.create_editor_and_load_files(path)
 
     def remove_from_open_files(self, filename):
         """Remove filename from sidebar.
         Parameters :
         filename (str) : the name to search for and remove
         """
-        # self.open_files.removeItemWidget(self.open_files.currentItem())
-        self.debug(f"removing {filename}")
-        items = self.open_files.findItems(filename, Qt.MatchContains)
-
-        for i in items:
-            self.open_files.removeItemWidget(i, 0)
-            self.open_files.takeTopLevelItem(0)
+        self.sidebar_models.remove_from_workspace(filename)
+        self.tool_bar.remove_from_active_file_list(filename)
 
     def create_live_editors(self):
-        editor = PythonTextEdit(code="", filename="live_window", live=True, read_only=False, parent=self)
-        # wire up editor signal to output window
-        # editor.update_output.connect(self.output_window.append_plain_text)
-        # editor.update_output_html.connect(self.output_window.append_html)
-        # editor.draw_line.connect(self.output_window.append_line)
-        # editor.set_editor_fonts(self.font)       
+        editor = PythonTextEdit(
+            code="", filename="live_window", live=True, read_only=False, parent=self
+        )
         self.connect_editor_slots(editor)
 
-        self.editor_tab.insertTab(0, editor,self.python_icon, "Python live_window")  # type: ignore
+        self.editor_tab.insertTab(0, editor, self.python_icon, "Python live_window")  # type: ignore
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
-        item = QTreeWidgetItem(self.open_files)  # type: ignore
-        item.setText(0, "Python live_window")
-        self.open_files.addTopLevelItem(item)  # type: ignore
+        self.sidebar_models.append_to_workspace("Python live_window")
         # add the Mel live window
-        editor = MelTextEdit(code="", filename="live_window", live=True,read_only=False,show_line_numbers=True, parent=self)
-        # editor.update_output.connect(self.output_window.append_plain_text)
-        # editor.update_output_html.connect(self.output_window.append_html)
-        # editor.draw_line.connect(self.output_window.append_line)
-        # editor.set_editor_fonts(self.font)        
+        editor = MelTextEdit(
+            code="",
+            filename="live_window",
+            live=True,
+            read_only=False,
+            show_line_numbers=True,
+            parent=self,
+        )
         self.connect_editor_slots(editor)
-        self.editor_tab.insertTab(0, editor,self.mel_icon, "Mel live_window")  # type: ignore
-        #self.editor_tab.setTabsClosable(False)
+        self.editor_tab.insertTab(0, editor, self.mel_icon, "Mel live_window")  # type: ignore
+        # self.editor_tab.setTabsClosable(False)
         self.editor_tab.setCurrentIndex(0)
         self.editor_tab.widget(0).setFocus()
-        item = QTreeWidgetItem(self.open_files)  # type: ignore
-        item.setText(0, "Mel live_window")
-        self.open_files.addTopLevelItem(item)  # type: ignore
+        self.sidebar_models.append_to_workspace("Mel live_window")
 
-    def create_output_window(self) :
-        self.output_window = TextEdit(parent=self,read_only=True,show_line_numbers=False)
+    def create_output_window(self):
+        self.output_window = TextEdit(
+            parent=self, read_only=True, show_line_numbers=False
+        )
         self.update_fonts.connect(self.output_window.set_editor_fonts)
         self.update_fonts.emit(self.font)
         self.output_window_layout.addWidget(self.output_window)
 
-    def connect_editor_slots(self,editor) :
+    def connect_editor_slots(self, editor):
         editor.update_output.connect(self.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_window.append_html)
         editor.draw_line.connect(self.output_window.append_line)
         self.update_fonts.connect(editor.set_editor_fonts)
         self.toggle_line_numbers.connect(editor.toggle_line_number)
-        
 
+    @Slot(int)
+    def change_active_model(self, index):
+        self.sidebar_models.change_active_model(index)
+        if index == 0:  # workspace files
+            self.sidebar_treeview.setModel(self.sidebar_models.workspace)
+            self.sidebar_treeview.setHeaderHidden(True)
+        elif index == 1:  # filesystem mode
 
+            self.sidebar_treeview.setModel(self.sidebar_models.file_system_model)
+            self.sidebar_treeview.setHeaderHidden(False)
+
+            self.sidebar_treeview.setRootIndex(
+                self.sidebar_models.file_system_model.index(QDir.currentPath())
+            )
