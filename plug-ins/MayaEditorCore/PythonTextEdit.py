@@ -22,8 +22,7 @@ import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
-                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
+from PySide2.QtWidgets import *
 
 from .PythonHighlighter import PythonHighlighter
 from .TextEdit import TextEdit
@@ -35,10 +34,18 @@ class PythonTextEdit(TextEdit):
     Custom QPlainTextEdit to allow us to add extra code editor features such as
     shortcuts zooms and line numbers
     """
-    
+
+    completer = QCompleter()
 
     def __init__(
-        self ,read_only : bool =True, show_line_numbers : bool=True , code: Optional[str] = None, filename: Optional[str] = None, live : bool =False,parent: Optional[Any] = None):
+        self,
+        read_only: bool = True,
+        show_line_numbers: bool = True,
+        code: Optional[str] = None,
+        filename: Optional[str] = None,
+        live: bool = False,
+        parent: Optional[Any] = None,
+    ):
         """
         Construct our PythonTextEdit.
 
@@ -48,15 +55,15 @@ class PythonTextEdit(TextEdit):
         live (bool) : if set to true we echo output and clear on run like the maya one
         parent (QObject) : parent widget.
         """
-        super().__init__( read_only , show_line_numbers , code,filename, parent)
+        super().__init__(read_only, show_line_numbers, code, filename, parent)
 
         self.highlighter = PythonHighlighter()
         self.highlighter.setDocument(self.document())
         self.execute_selected = False
         self.installEventFilter(self)
-        self.live=live
-
-        
+        self.live = live
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        # self.setCompleter(self.completer)
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -83,7 +90,7 @@ class PythonTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return super().eventFilter(obj,event)
+                return super().eventFilter(obj, event)
         else:
             return False
 
@@ -145,19 +152,19 @@ class PythonTextEdit(TextEdit):
             # so replace
             text = text.replace("\u2029", "\n")
             if self.live:
-                self.update_output.emit(self.toPlainText()+"\n")
+                self.update_output.emit(self.toPlainText() + "\n")
                 self.draw_line.emit()
 
             value = utils.executeInMainThreadWithResult(text)
             if self.live and value != None:
-                value=str(value)+"\n"
+                value = str(value) + "\n"
                 self.draw_line.emit()
 
                 self.update_output_html.emit(value)
                 self.draw_line.emit()
 
         else:
-            text_to_run = self.toPlainText()+"\n"
+            text_to_run = self.toPlainText() + "\n"
             if self.live:
                 self.update_output.emit(text_to_run)
                 self.draw_line.emit()
@@ -165,7 +172,7 @@ class PythonTextEdit(TextEdit):
             value = utils.executeInMainThreadWithResult(text_to_run)
             # if we are a live window output the results
             if self.live and value != None:
-                value=str(value)
+                value = str(value)
                 self.update_output.emit(value)
 
     def save_file(self):
@@ -192,4 +199,3 @@ class PythonTextEdit(TextEdit):
             code_file.write(self.toPlainText())
         self.needs_saving = False
         return True
-

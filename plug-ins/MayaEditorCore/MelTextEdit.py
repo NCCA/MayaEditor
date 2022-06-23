@@ -21,23 +21,37 @@ import maya.api.OpenMaya as OpenMaya
 import maya.mel as mel
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (QFileDialog, QInputDialog, QLineEdit,
-                               QPlainTextEdit, QTextEdit, QToolTip, QWidget)
+from PySide2.QtWidgets import (
+    QFileDialog,
+    QInputDialog,
+    QLineEdit,
+    QPlainTextEdit,
+    QTextEdit,
+    QToolTip,
+    QWidget,
+)
 
-#from .LineNumberArea import LineNumberArea
+# from .LineNumberArea import LineNumberArea
 from .MelHighlighter import MelHighlighter
 from .TextEdit import TextEdit
 
 
 class MelTextEdit(TextEdit):
     """Custom QPlainTextEdit.
-    
+
 
     Custom QPlainTextEdit to allow us to add extra code editor features such as
     shortcuts zooms and line numbers
     """
+
     def __init__(
-         self ,read_only : bool =True, show_line_numbers : bool=True , code: Optional[str] = None, filename: Optional[str] = None, live : bool =False,parent: Optional[Any] = None
+        self,
+        read_only: bool = True,
+        show_line_numbers: bool = True,
+        code: Optional[str] = None,
+        filename: Optional[str] = None,
+        live: bool = False,
+        parent: Optional[Any] = None,
     ):
         """
         Construct our MelTextEdit.
@@ -48,15 +62,13 @@ class MelTextEdit(TextEdit):
         live (bool) : if set to true we echo output and clear on run like the maya one
         parent (QObject) : parent widget.
         """
-        super().__init__( read_only , show_line_numbers , code,filename, parent)
-        
+        super().__init__(read_only, show_line_numbers, code, filename, parent)
+
         self.highlighter = MelHighlighter()
         self.highlighter.setDocument(self.document())
         self.execute_selected = False
-        self.live=live
-        
+        self.live = live
 
-  
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
 
@@ -82,8 +94,8 @@ class MelTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return super().eventFilter(obj,event)
-        else: 
+                return super().eventFilter(obj, event)
+        else:
             return False
 
     def event(self, event):
@@ -131,11 +143,11 @@ class MelTextEdit(TextEdit):
             # so replace
             text = text.replace("\u2029", "\n")
             if self.live:
-                self.update_output.emit(self.toPlainText()+"\n")
+                self.update_output.emit(self.toPlainText() + "\n")
                 self.draw_line.emit()
             value = mel.eval(text)
             if self.live and value != None:
-                value=str(value)+"\n"
+                value = str(value) + "\n"
                 self.draw_line.emit()
 
                 self.update_output_html.emit(value)
@@ -150,7 +162,7 @@ class MelTextEdit(TextEdit):
             value = mel.eval(text_to_run)
             # if we are a live window clear the editor
             if self.live and value != None:
-                value=str(value)
+                value = str(value)
                 self.update_output.emit(value)
 
     def save_file(self):
@@ -177,4 +189,3 @@ class MelTextEdit(TextEdit):
             code_file.write(self.toPlainText())
         self.needs_saving = False
         return True
-

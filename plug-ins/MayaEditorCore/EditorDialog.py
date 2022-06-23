@@ -560,7 +560,7 @@ class EditorDialog(QDialog):
         self.help_output_window = TextEdit(
             parent=self.help_frame, read_only=True, show_line_numbers=False
         )
-        frame_layout.addWidget(self.help_output_window, 1, 0, 2, 2)
+        frame_layout.addWidget(self.help_output_window, 2, 0, 2, 2)
         #        self.help_frame.addWidget(0, 1, , 2, TextEdit())
         self.output_splitter.addWidget(self.help_frame)
         self.output_window_layout.addWidget(self.output_splitter)
@@ -569,6 +569,9 @@ class EditorDialog(QDialog):
             self.help_frame.help_items.addItem(c)
         self.help_frame.help_items.currentIndexChanged.connect(self.run_maya_help)
         self.help_frame.search_help.returnPressed.connect(self.search_maya_help)
+        completer = QCompleter(self.maya_cmds)
+
+        self.help_frame.search_help.setCompleter(completer)
 
     @Slot(int)
     def run_maya_help(self, index: int) -> None:
