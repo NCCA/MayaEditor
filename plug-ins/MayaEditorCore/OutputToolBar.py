@@ -47,14 +47,23 @@ class OutputToolBar(QToolBar):
         save_to_file = QPushButton("Save")
         save_to_file.clicked.connect(self.save_to_file)
         self.addWidget(save_to_file)
-    
-    def clipboard_copy(self) :
+        show_help = QCheckBox("Show Help")
+        show_help.setCheckable(True)
+        show_help.setChecked(True)
+        show_help.toggled.connect(self.show_help)
+        self.addWidget(show_help)
+
+    @Slot(bool)
+    def show_help(self, state: bool) -> None:
+        self.parent.help_frame.setVisible(state)
+
+    def clipboard_copy(self) -> None:
         clipboard = QApplication.clipboard()
         clipboard.clear(mode=clipboard.Clipboard)
-        text=self.parent.output_window.toPlainText()
-        clipboard.setText(text, mode=clipboard.Clipboard)     
+        text = self.parent.output_window.toPlainText()
+        clipboard.setText(text, mode=clipboard.Clipboard)
 
-    def save_to_file(self) :
+    def save_to_file(self):
         file_name, _ = QFileDialog.getSaveFileName(
             self,
             "Save Output Text",
@@ -62,6 +71,5 @@ class OutputToolBar(QToolBar):
             ("Text (*.txt)"),
         )
         if file_name is not None:
-            with open(file_name,"w") as output_file :
+            with open(file_name, "w") as output_file:
                 output_file.write(self.parent.output_window.toPlainText())
-

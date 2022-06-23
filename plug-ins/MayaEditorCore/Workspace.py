@@ -142,5 +142,4 @@ class Workspace:
                 return False
 
     def close(self):
-        print("closing workspace")
         self.check_saved()

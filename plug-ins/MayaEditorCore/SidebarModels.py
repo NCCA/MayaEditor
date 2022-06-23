@@ -44,7 +44,6 @@ class SideBarModels(QObject):
 
     @Slot(int)
     def change_active_model(self, index):
-        print(f"change mode {index}")
         # I know I could use a list of a dictionary to store this but I think this makes the
         # rest of the code much neater and we will only have 3-4 types to content with
         # Guess this is the C++ programmer in me coming out.

@@ -542,13 +542,50 @@ class EditorDialog(QDialog):
         self.editor_tab.widget(0).setFocus()
         self.sidebar_models.append_to_workspace("Mel live_window")
 
-    def create_output_window(self):
+    def create_output_window(self) -> None:
         self.output_window = TextEdit(
             parent=self, read_only=True, show_line_numbers=False
         )
         self.update_fonts.connect(self.output_window.set_editor_fonts)
         self.update_fonts.emit(self.font)
-        self.output_window_layout.addWidget(self.output_window)
+        #  create a splitter for the help / output
+        self.output_splitter = QSplitter()
+        self.output_splitter.addWidget(self.output_window)
+        # add the help section and wire up
+        self.help_frame = QFrame()
+        UiLoader().loadUi(
+            self.root_path + "/plug-ins/ui/helpwidget.ui", self.help_frame
+        )
+        frame_layout = self.help_frame.grid_layout
+        self.help_output_window = TextEdit(
+            parent=self.help_frame, read_only=True, show_line_numbers=False
+        )
+        frame_layout.addWidget(self.help_output_window, 1, 0, 2, 2)
+        #        self.help_frame.addWidget(0, 1, , 2, TextEdit())
+        self.output_splitter.addWidget(self.help_frame)
+        self.output_window_layout.addWidget(self.output_splitter)
+        self.maya_cmds = cmds.help("[a-z]*", list=True, lng="Python")
+        for c in self.maya_cmds:
+            self.help_frame.help_items.addItem(c)
+        self.help_frame.help_items.currentIndexChanged.connect(self.run_maya_help)
+        self.help_frame.search_help.returnPressed.connect(self.search_maya_help)
+
+    @Slot(int)
+    def run_maya_help(self, index: int) -> None:
+        command = self.help_frame.help_items.currentText()
+        output = cmds.help(command)
+        output = output.strip("\n")
+        self.help_output_window.clear()
+        self.help_output_window.appendPlainText(output)
+
+    @Slot(int)
+    def search_maya_help(self) -> None:
+        help_text = self.help_frame.search_help.text()
+        if help_text in self.maya_cmds:
+            output = cmds.help(help_text)
+            output = output.strip("\n")
+            self.help_output_window.clear()
+            self.help_output_window.appendPlainText(output)
 
     def connect_editor_slots(self, editor):
         editor.update_output.connect(self.output_window.append_plain_text)
