@@ -573,7 +573,7 @@ class EditorDialog(QDialog):
     @Slot(int)
     def run_maya_help(self, index: int) -> None:
         command = self.help_frame.help_items.currentText()
-        output = cmds.help(command)
+        output = cmds.help(command, language="python")
         output = output.strip("\n")
         self.help_output_window.clear()
         self.help_output_window.appendPlainText(output)
@@ -582,7 +582,7 @@ class EditorDialog(QDialog):
     def search_maya_help(self) -> None:
         help_text = self.help_frame.search_help.text()
         if help_text in self.maya_cmds:
-            output = cmds.help(help_text)
+            output = cmds.help(help_text, language="python")
             output = output.strip("\n")
             self.help_output_window.clear()
             self.help_output_window.appendPlainText(output)

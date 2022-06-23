@@ -18,6 +18,7 @@ This file contains the class to produce the main toolbar and buttons for the edi
 """
 from typing import Any, Optional
 
+import maya.cmds as cmds
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtUiTools import *
@@ -52,6 +53,9 @@ class OutputToolBar(QToolBar):
         show_help.setChecked(True)
         show_help.toggled.connect(self.show_help)
         self.addWidget(show_help)
+        open_web_help = QPushButton("Online Help")
+        open_web_help.clicked.connect(lambda x: cmds.help(doc=True))
+        self.addWidget(open_web_help)
 
     @Slot(bool)
     def show_help(self, state: bool) -> None:

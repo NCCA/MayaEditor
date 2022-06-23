@@ -42,6 +42,7 @@ class EditorToolBar(QToolBar):
         # isn't necessarily the file we are editing, something that bugs me on
         # a lot of editors
         run_project = QPushButton("Run Project")
+        run_project.setDefault(False)
         run_project.clicked.connect(parent.tool_bar_run_project_clicked)
         self.addWidget(run_project)
         self.active_project_file = QComboBox()
@@ -60,13 +61,12 @@ class EditorToolBar(QToolBar):
         goto_number.setMaximum(999999)
         goto_number.valueChanged.connect(parent.tool_bar_goto_changed)
         self.addWidget(goto_number)
-        
 
     def add_to_active_file_list(self, filename: str) -> None:
         """Add filename to run project combo."""
         self.active_project_file.addItem(filename)
 
-    def remove_from_active_file_list(self, filename : str) -> None :
+    def remove_from_active_file_list(self, filename: str) -> None:
         print(f"{filename}")
-        index= self.active_project_file.findText(filename,Qt.MatchContains)
+        index = self.active_project_file.findText(filename, Qt.MatchContains)
         self.active_project_file.removeItem(index)
