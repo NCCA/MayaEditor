@@ -260,6 +260,27 @@ class EditorDialog(QDialog):
         show_line_numbers_action.setCheckable(True)
         show_line_numbers_action.setChecked(True)
 
+        # show output window
+        show_output_window_action = QAction("Show Output Window", self)
+        settings_menu.addAction(show_output_window_action)
+        show_output_window_action.toggled.connect(
+            lambda state: self.output_window_group_box.setVisible(state)
+        )
+        show_output_window_action.setCheckable(True)
+        show_output_window_action.setChecked(True)
+        show_output_window_action.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_1))
+
+        # show sidebar window
+        show_sidebar_action = QAction("Show Sidebar", self)
+        settings_menu.addAction(show_sidebar_action)
+        show_sidebar_action.toggled.connect(
+            lambda state: self.side_bar.setVisible(state)
+        )
+        show_sidebar_action.setCheckable(True)
+        show_sidebar_action.setChecked(True)
+
+        show_sidebar_action.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_0))
+
         # Menu to main menu bar
         self.menu_bar.addMenu(settings_menu)
 
@@ -273,9 +294,11 @@ class EditorDialog(QDialog):
             "",
             ("Mel / Python (*.py *.mel, *.*)"),
         )
-        self.create_editor_and_load_files(file_name)
-        # add this file to current workspace
-        self.workspace.add_file(file_name)
+        # make sure we are not loading a file in the workspace already
+        if file_name not in self.workspace.files:
+            self.create_editor_and_load_files(file_name)
+            # add this file to current workspace
+            self.workspace.add_file(file_name)
 
     def new_file(self) -> None:
         """Create a new file tab."""

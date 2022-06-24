@@ -62,18 +62,19 @@ class MayaEditor(OpenMaya.MPxCommand):
 
     def __init__(self):
         super(MayaEditor, self).__init__()
-        cmds.commandPort(name=":7777", sourceType="python", echoOutput=True)
 
     @classmethod
     def doIt(cls, args):
         """
         Called when the command is executed in script
         """
-        if MayaEditor.ui is None:
-            MayaEditor.ui = MayaEditorCore.EditorDialog()
-            MayaEditor.ui.showNormal()
-        else:
-            MayaEditor.ui.showNormal()
+        try:
+            MayaEditor.ui.close()
+            MayaEditor.ui.deleteLater()
+        except:
+            pass
+        MayaEditor.ui = MayaEditorCore.EditorDialog()
+        MayaEditor.ui.showNormal()
 
     @classmethod
     def creator(cls):
@@ -86,6 +87,7 @@ class MayaEditor(OpenMaya.MPxCommand):
     def cleanup(cls):
         # cleanup the UI and call the destructors
         MayaEditor.ui.deleteLater()
+        MayaEditor.ui = None
 
 
 def initializePlugin(plugin):

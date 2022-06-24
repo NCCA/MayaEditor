@@ -15,6 +15,10 @@
 """Workspace module for the NCCA Maya Editor.
 
 Contains all the code an functions for creating, reading and writing workspace data.
+The most important part of this is the self.files list where all the workspace project data will be saved. 
+
+TODO :
+    save some per workspace / per file data (which tab open, where in file, fonts etc.)
 """
 import enum
 import json

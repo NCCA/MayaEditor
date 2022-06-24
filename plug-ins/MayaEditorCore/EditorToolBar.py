@@ -16,6 +16,7 @@
 
 This file contains the class to produce the main toolbar and buttons for the editor, most functions will connect to the parent 
 """
+from pathlib import Path
 from typing import Any, Optional
 
 from PySide2.QtCore import *
@@ -58,15 +59,39 @@ class EditorToolBar(QToolBar):
         self.addWidget(label)
         goto_number = QSpinBox()
         goto_number.setMinimum(1)
-        goto_number.setMaximum(999999)
+        goto_number.setMaximum(99999)
         goto_number.valueChanged.connect(parent.tool_bar_goto_changed)
         self.addWidget(goto_number)
+        self.addSeparator()
+        label = QLabel("Quick Load")
+        self.addWidget(label)
+        self.quick_load_edit = QLineEdit()
+        completer = QCompleter()
+        file_system_model = QFileSystemModel(completer)
+        root_path = str(Path.home().expanduser())
+        file_system_model.setRootPath(root_path)
+        filters = ["*.txt", "*.py", "*.mel", "*.md"]
+        file_system_model.setNameFilters(filters)
+        completer.setModel(file_system_model)
+        self.quick_load_edit.setCompleter(completer)
+        self.quick_load_edit.setText(root_path)
+        self.quick_load_edit.returnPressed.connect(self.quick_load)
+        self.quick_load_edit.inputRejected.connect(
+            lambda x: self.quick_load_edit.clear()
+        )
+        self.addWidget(self.quick_load_edit)
+
+    def quick_load(self) -> None:
+        """Load the file from the quick load text edit."""
+        filename = self.quick_load_edit.text()
+        if Path(filename).is_file() and filename not in self.parent.workspace.files:
+            self.parent.create_editor_and_load_files(filename)
 
     def add_to_active_file_list(self, filename: str) -> None:
         """Add filename to run project combo."""
         self.active_project_file.addItem(filename)
 
     def remove_from_active_file_list(self, filename: str) -> None:
-        print(f"{filename}")
+        """Remove the file from the active file list, there is a possibility of duplicates"""
         index = self.active_project_file.findText(filename, Qt.MatchContains)
         self.active_project_file.removeItem(index)

@@ -184,6 +184,8 @@ class MelTextEdit(TextEdit):
                 return False
             else:
                 self.filename = filename
+                self.parent.workspace.add_file(filename)
+
         # Now we have a filename save
         with open(self.filename, "w") as code_file:
             code_file.write(self.toPlainText())
