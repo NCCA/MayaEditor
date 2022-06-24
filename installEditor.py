@@ -16,7 +16,7 @@ def install_module(location):
     # first write the module file
     current_dir = Path.cwd()
     module_path = location + "modules/MayaEditor.mod"
-    if not Path().is_file(module_path):
+    if not Path(module_path).is_file():
         print("writing module file")
         with open(module_path, "w") as file:
             file.write(f"+ MayaEditor 1.0 {current_dir}\n")
