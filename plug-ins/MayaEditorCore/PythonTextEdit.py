@@ -17,7 +17,7 @@
 import importlib.util
 from typing import Any, Callable, Optional, Type
 
-import jedi
+# import jedi
 import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
@@ -110,34 +110,34 @@ class PythonTextEdit(TextEdit):
         else:
             return TextEdit.event(self, event)
 
-    def process_tooltip(self, event):
-        """Process the tooltip event.
+    # def process_tooltip(self, event):
+    #     """Process the tooltip event.
 
-        Called from the event filter and is used to generate code hints
-        Parameters :
-        event (QEvent) : the toolTip event.
-        """
-        # Grab the help event and get the position
-        jedi_data = jedi.Script(self.toPlainText())
-        help_event = event
-        pos = QPoint(help_event.pos())
-        # find text under the cursos and lookup
-        cursor = self.cursorForPosition(pos)
-        cursor.select(QTextCursor.WordUnderCursor)
-        hint = jedi_data.help(line=cursor.blockNumber() + 1)
-        signatures = jedi_data.call_signatures()
-        # help text is not the best, form to HTML and paragraph
-        raw_text = cursor.selectedText()
-        if hint:
-            try:
-                doc_str = eval(raw_text).__doc__
-            except:
-                doc_str = ""
-            help_text = f"""<html><p><b>Name : </b>{hint[0].name}</p><br>
-                <p><b>Description : </b> {hint[0].description}  </p>
-                <br><p> <b>Docs</b> : <pre>{doc_str}</pre> </p>
-                </html>"""
-            QToolTip.showText(help_event.globalPos(), help_text)
+    #     Called from the event filter and is used to generate code hints
+    #     Parameters :
+    #     event (QEvent) : the toolTip event.
+    #     """
+    #     # Grab the help event and get the position
+    #     jedi_data = jedi.Script(self.toPlainText())
+    #     help_event = event
+    #     pos = QPoint(help_event.pos())
+    #     # find text under the cursos and lookup
+    #     cursor = self.cursorForPosition(pos)
+    #     cursor.select(QTextCursor.WordUnderCursor)
+    #     hint = jedi_data.help(line=cursor.blockNumber() + 1)
+    #     signatures = jedi_data.call_signatures()
+    #     # help text is not the best, form to HTML and paragraph
+    #     raw_text = cursor.selectedText()
+    #     if hint:
+    #         try:
+    #             doc_str = eval(raw_text).__doc__
+    #         except:
+    #             doc_str = ""
+    #         help_text = f"""<html><p><b>Name : </b>{hint[0].name}</p><br>
+    #             <p><b>Description : </b> {hint[0].description}  </p>
+    #             <br><p> <b>Docs</b> : <pre>{doc_str}</pre> </p>
+    #             </html>"""
+    #         QToolTip.showText(help_event.globalPos(), help_text)
 
     def execute_code(self):
         """Execute the code in the current Editor.
