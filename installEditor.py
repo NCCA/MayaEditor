@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import os
 import platform
 import sys
@@ -41,7 +42,7 @@ def check_maya_installed(op_sys):
 
 
 if __name__ == "__main__":
-    op_sys = platform.system()
+
     try:
         m_loc = check_maya_installed(op_sys)
     except:
