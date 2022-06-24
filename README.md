@@ -9,6 +9,14 @@ See [TODO.md](TODO.md) for roadmap
 
 ## Installing
 
+This editor can be installed in any location I usually use my home directory. 
+
+```
+git clone git@github.com:/NCCA/MayaEditor 
+```
+
+If you don't have a git account you can download the zip and extract it. 
+
 There is a simple python script to install and create the module file for the maya plugin. This is in the root of the project folder and is called installEditor.py. This will locate the modules folder for the OS and generate the file MayaEditor.mod. This file is located in the Users home folder in one of the following locations.
 
 - Linux : $HOME/maya
