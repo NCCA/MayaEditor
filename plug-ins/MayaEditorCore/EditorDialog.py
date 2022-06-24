@@ -86,11 +86,18 @@ class EditorDialog(QDialog):
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         # Next the UI as again required for other things
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
-        UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
-        # load icons
-        self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
-        self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
-        self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
+        if os.system =="Windows" :
+            UiLoader().loadUi(self.root_path + "\\plug-ins\\ui\\form.ui", self)
+            # load icons
+            self.python_icon = QIcon(self.root_path + "\\plug-ins\\icons\\python.png")
+            self.mel_icon = QIcon(self.root_path + "\\plug-ins\\icons\\mel.png")
+            self.text_icon = QIcon(self.root_path + "\\plug-ins\\icons\\text.png")
+        else :
+            UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
+            # load icons
+            self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
+            self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
+            self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
 
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
@@ -129,8 +136,10 @@ class EditorDialog(QDialog):
         )
         self.resize(self.settings.value("size", QSize(1024, 720)))
         workspace = self.settings.value("workspace")
-        self.load_workspace_to_editor(workspace)
-
+        try :
+            self.load_workspace_to_editor(workspace)
+        except :
+            pass
         self.settings.beginGroup("Font")
         name = self.settings.value("font-name", type=str)
         size = self.settings.value("font-size", type=int)
@@ -576,7 +585,12 @@ class EditorDialog(QDialog):
         self.output_splitter.addWidget(self.output_window)
         # add the help section and wire up
         self.help_frame = QFrame()
-        UiLoader().loadUi(
+        if os.system=="Windows" :
+            UiLoader().loadUi(
+            self.root_path + "\\plug-ins\\ui\\helpwidget.ui", self.help_frame
+        )
+        else :
+            UiLoader().loadUi(
             self.root_path + "/plug-ins/ui/helpwidget.ui", self.help_frame
         )
         frame_layout = self.help_frame.grid_layout

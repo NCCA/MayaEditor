@@ -7,7 +7,7 @@ from pathlib import Path
 maya_locations = {
     "Linux": "/maya",
     "Darwin": "/Library/Preferences/Autodesk/maya",
-    "Windows": "\\Documents\\maya\\version",
+    "Windows": "\\Documents\\maya\\",
 }
 
 
@@ -20,8 +20,11 @@ def install_module(location, os):
     module_path = location + "//modules/MayaEditor.mod"
     ## change to \\ for windows (easier then messing with Path objects)
     if os == "Windows":
+
         module_dir = Path(location + "\\modules")
-        module_path = location + "\\modules\\MayaEditor.mod"
+        module_path = location + "modules\\MayaEditor.mod"
+
+    module_dir.mkdir(exist_ok=True)
 
     if not Path(module_path).is_file():
         print("writing module file")
