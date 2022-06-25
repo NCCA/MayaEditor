@@ -1,6 +1,12 @@
 # TODO
 
-This is my work in progress TODO list.
+This is my work in progress TODO list, more so I know what to do
+# Immediate
+
+1. Tidy up the Linux / Mac / Windows stuff (use a Qt Resources?)
+2. Refactor the Workspace / UI / Loading logic a bit more
+3. No test should really add some
+4. Add Makefile to run mypy and other tools for checking etc.
 
 # Next
 
@@ -9,8 +15,8 @@ This is my work in progress TODO list.
 3. Add Completer for Python and Mel
 4. Build Better Code model for Python and Mel and display in SideBar
 
-
-# Project 
+ya
+# Project Goals
 1. Add Font control / Style Sheets
 2. Add Search / Search Replace
 3. Save more settings

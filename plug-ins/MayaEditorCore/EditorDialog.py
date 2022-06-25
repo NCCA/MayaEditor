@@ -55,7 +55,7 @@ def get_main_window() -> Any:
     return wrapInstance(int(window), QWidget)
 
 
-class EditorDialog(QDialog):
+class EditorDialog(QWidget):
     """Editor Dialog window main class.
 
     Inherits from QDialog and loads the ui from files.
