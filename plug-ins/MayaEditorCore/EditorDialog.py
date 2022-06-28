@@ -227,6 +227,13 @@ class EditorDialog(QDialog):
         self.workspace.close()
         super(EditorDialog, self).closeEvent(event)
 
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+
+        if event.key() == Qt.Key_Escape:
+            return True
+        else:
+            return super().keyPressEvent(event)
+
     def create_menu_bar(self) -> None:
         """Create the menubar for the editor."""
         self.menu_bar = QMenuBar()
@@ -330,10 +337,10 @@ class EditorDialog(QDialog):
 
     def create_tool_bar(self) -> None:
         """Create the toolbar."""
-        self.tool_bar = EditorToolBar(self)  # QToolBar(self)
+        self.tool_bar = EditorToolBar(self)
         # Add to main dialog
         self.ui.dock_widget.setWidget(self.tool_bar)  # type: ignore
-        self.output_tool_bar = OutputToolBar(self)  # QToolBar(self)
+        self.output_tool_bar = OutputToolBar(self)
         # Add to main dialog
         self.ui.output_dock.setWidget(self.output_tool_bar)  # type: ignore
 
@@ -533,7 +540,7 @@ class EditorDialog(QDialog):
             item = self.sidebar_models.workspace.itemFromIndex(index)  # item.text(0)
             text = item.text()
             # first find the index of the active tab
-            tab = self.editor_tab  # type: ignore
+            tab = self.ui.editor_tab  # type: ignore
             index = 0
             for t in range(0, tab.count() + 1):
                 if text == tab.tabText(t):
@@ -664,9 +671,10 @@ class EditorDialog(QDialog):
             self.ui.sidebar_treeview.setRootIndex(
                 self.sidebar_models.file_system_model.index(QDir.currentPath())
             )
-        elif index == 1:  # Code Outline
-
+        elif index == 2:  # Code Outline
             self.ui.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
+            self.sidebar_models.generate_code_model()
+
             self.ui.sidebar_treeview.setHeaderHidden(True)
 
 

@@ -43,6 +43,14 @@ class SideBarModels(QObject):
         for i in items:
             self.workspace.removeRow(i.row())
 
+    def generate_code_model(self, text=""):
+        self.code_system_model.clear()
+        item = QStandardItem()
+        item.setText("Global")
+        self.code_system_model.insertRow(0, item)
+        item.setText("Proc")
+        self.code_system_model.insertRow(0, item)
+
     @Slot(int)
     def change_active_model(self, index):
         # I know I could use a list of a dictionary to store this but I think this makes the

@@ -93,7 +93,7 @@ class MelTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return super().eventFilter(obj, event)
+                return False  # return super().eventFilter(obj, event)
         else:
             return False
 
@@ -113,7 +113,7 @@ class MelTextEdit(TextEdit):
         else:
             return TextEdit.event(self, event)
 
-    def process_tooltip(self, event):
+    def process_tooltip(self, event) -> None:
         """Process the tooltip event.
 
         Called from the event filter and is used to generate code hints
@@ -129,7 +129,7 @@ class MelTextEdit(TextEdit):
         raw_text = cursor.selectedText()
         QToolTip.showText(help_event.globalPos(), "Coming soon help tooltups")
 
-    def execute_code(self):
+    def execute_code(self) -> None:
         """Execute the code in the current Editor.
 
         This will either execute the selected text or the whole file dependant upon
@@ -151,7 +151,6 @@ class MelTextEdit(TextEdit):
 
                 self.update_output_html.emit(value)
                 self.draw_line.emit()
-
         else:
             text_to_run = self.toPlainText()
             if self.live:
@@ -164,7 +163,7 @@ class MelTextEdit(TextEdit):
                 value = str(value)
                 self.update_output.emit(value)
 
-    def save_file(self):
+    def save_file(self) -> bool:
         """Save the current editor file.
 
         This is called from the event filter or menu when the file is to be saved.

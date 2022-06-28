@@ -140,7 +140,7 @@ class TextEdit(QPlainTextEdit):
                 self.goto_line()
                 return True
             else:
-                return QPlainTextEdit.event(self, event)
+                return False
         else:
             return False
 

@@ -90,7 +90,7 @@ class PythonTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return super().eventFilter(obj, event)
+                return False
         else:
             return False
 
@@ -105,7 +105,7 @@ class PythonTextEdit(TextEdit):
         Returns :  True is event is processed here else False to pass on.
         """
         if event.type() is QEvent.ToolTip:
-            #self.process_tooltip(event)
+            # self.process_tooltip(event)
             return True
         else:
             return TextEdit.event(self, event)

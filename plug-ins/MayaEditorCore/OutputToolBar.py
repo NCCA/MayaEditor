@@ -48,6 +48,16 @@ class OutputToolBar(QToolBar):
         save_to_file = QPushButton("Save")
         save_to_file.clicked.connect(self.save_to_file)
         self.addWidget(save_to_file)
+        self.addSeparator()
+        label = QLabel("Output Level")
+        self.addWidget(label)
+        output_level = QComboBox()
+        output_level.addItem("Echo All")
+        output_level.addItem("Normal")
+        output_level.setCurrentIndex(1)
+        output_level.currentIndexChanged.connect(self.update_output_level)
+        self.addWidget(output_level)
+        self.addSeparator()
         show_help = QCheckBox("Show Help")
         show_help.setCheckable(True)
         show_help.setChecked(True)
@@ -60,6 +70,10 @@ class OutputToolBar(QToolBar):
     @Slot(bool)
     def show_help(self, state: bool) -> None:
         self.parent.help_frame.setVisible(state)
+
+    @Slot(int)
+    def update_output_level(self, index: int) -> None:
+        cmds.commandEcho(state=index)
 
     def clipboard_copy(self) -> None:
         clipboard = QApplication.clipboard()
