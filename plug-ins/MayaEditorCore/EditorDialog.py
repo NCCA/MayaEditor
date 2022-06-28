@@ -596,6 +596,7 @@ class EditorDialog(QDialog):
         #  create a splitter for the help / output
         self.output_splitter = QSplitter()
         self.output_splitter.addWidget(self.output_window)
+
         # add the help section and wire up
         self.help_frame = QFrame()
         grid_layout = QGridLayout()
@@ -604,24 +605,19 @@ class EditorDialog(QDialog):
 
         self.help_items = QComboBox()
         self.help_items.setObjectName("help_items")
-        grid_layout.addWidget(self.help_items, 1, 1, 1, 1)
+        grid_layout.addWidget(self.help_items, 0, 2, 1, 1)
 
+        self.label = QLabel("Help")
+        grid_layout.addWidget(self.label, 0, 0, 1, 1)
         self.search_help = QLineEdit(self.help_frame)
         self.search_help.setObjectName("search_help")
+        self.search_help.setToolTip("type to search maya.cmds helps ")
+        grid_layout.addWidget(self.search_help, 0, 1, 1, 1)
 
-        grid_layout.addWidget(self.search_help, 1, 0, 1, 1)
-
-        self.label = QLabel(self.help_frame)
-        self.label.setObjectName("label")
-
-        grid_layout.addWidget(self.label, 0, 0, 1, 1)
-
-        # frame_layout = self.help_frame.layout()
         self.help_output_window = TextEdit(
             parent=self.help_frame, read_only=True, show_line_numbers=False
         )
-        grid_layout.addWidget(self.help_output_window, 2, 0, 2, 2)
-        #        self.help_frame.addWidget(0, 1, , 2, TextEdit())
+        grid_layout.addWidget(self.help_output_window, 1, 0, 3, 3)
         self.output_splitter.addWidget(self.help_frame)
         self.ui.output_window_layout.addWidget(self.output_splitter)
         self.maya_cmds = cmds.help("[a-z]*", list=True, lng="Python")
@@ -630,7 +626,6 @@ class EditorDialog(QDialog):
         self.help_items.currentIndexChanged.connect(self.run_maya_help)
         self.search_help.returnPressed.connect(self.search_maya_help)
         completer = QCompleter(self.maya_cmds)
-
         self.search_help.setCompleter(completer)
 
     @Slot(int)

@@ -67,6 +67,7 @@ class MelTextEdit(TextEdit):
         self.highlighter.setDocument(self.document())
         self.execute_selected = False
         self.live = live
+        self.copyAvailable.connect(self.selection_changed)
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -143,25 +144,28 @@ class MelTextEdit(TextEdit):
             text = text.replace("\u2029", "\n")
             if self.live:
                 self.update_output.emit(self.toPlainText() + "\n")
-                self.draw_line.emit()
+
             value = mel.eval(text)
             if self.live and value != None:
                 value = str(value) + "\n"
-                self.draw_line.emit()
-
                 self.update_output_html.emit(value)
-                self.draw_line.emit()
         else:
             text_to_run = self.toPlainText()
             if self.live:
                 self.update_output.emit(text_to_run)
-                self.draw_line.emit()
                 self.clear()
             value = mel.eval(text_to_run)
             # if we are a live window clear the editor
             if self.live and value != None:
                 value = str(value)
                 self.update_output.emit(value)
+
+    def selection_changed(self, state):
+        """Signal called when text is selected.
+        This is used to set the flag in the editor so if we have selected code we
+        only execute that rather than the whole file.
+        """
+        self.execute_selected = state
 
     def save_file(self) -> bool:
         """Save the current editor file.

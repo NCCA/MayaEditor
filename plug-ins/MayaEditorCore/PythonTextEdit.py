@@ -64,6 +64,7 @@ class PythonTextEdit(TextEdit):
         self.live = live
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         # self.setCompleter(self.completer)
+        self.copyAvailable.connect(self.selection_changed)
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -174,6 +175,13 @@ class PythonTextEdit(TextEdit):
             if self.live and value != None:
                 value = str(value)
                 self.update_output.emit(value)
+
+    def selection_changed(self, state):
+        """Signal called when text is selected.
+        This is used to set the flag in the editor so if we have selected code we
+        only execute that rather than the whole file.
+        """
+        self.execute_selected = state
 
     def save_file(self):
         """Save the current editor file.
