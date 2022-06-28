@@ -38,6 +38,7 @@ from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
+from .MainUI import Ui_editor_dialog
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar
 from .PythonTextEdit import PythonTextEdit
@@ -56,7 +57,8 @@ def get_main_window() -> Any:
     return wrapInstance(int(window), QWidget)
 
 
-class EditorDialog(MayaQWidgetDockableMixin, QDialog):
+class EditorDialog(QDialog):
+    # class EditorDialog(QDialog):
     """Editor Dialog window main class.
 
     Inherits from QDialog and loads the ui from files.
@@ -79,7 +81,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         if parent is None:
             parent = get_main_window()
 
-        super(self.__class__, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName(self.__class__.editor_name)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
@@ -89,19 +91,19 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         # Next the UI as again required for other things
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
-        self.object = QObject(self)
         if os.system == "Windows":
-            UiLoader().loadUi(self.root_path + "\\plug-ins\\ui\\form.ui", self.object)
             # load icons
             self.python_icon = QIcon(self.root_path + "\\plug-ins\\icons\\python.png")
             self.mel_icon = QIcon(self.root_path + "\\plug-ins\\icons\\mel.png")
             self.text_icon = QIcon(self.root_path + "\\plug-ins\\icons\\text.png")
         else:
-            UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self.object)
             # load icons
             self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
             self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
             self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
+
+        self.ui = Ui_editor_dialog()
+        self.ui.setupUi(self)
 
         # This should make the window stay on top
         self.setWindowFlags(Qt.Tool)
@@ -110,13 +112,13 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         self.create_tool_bar()
         self.create_menu_bar()
         self.sidebar_models = SideBarModels(self)
-        self.sidebar_treeview.setModel(self.sidebar_models.active_model)
-        self.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
+        self.ui.sidebar_treeview.setModel(self.sidebar_models.active_model)
+        self.ui.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
         # connect tab close event
-        self.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
+        self.ui.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
         # setup file view sidebar
-        self.sidebar_treeview.setHeaderHidden(True)
-        self.sidebar_treeview.clicked.connect(self.file_view_changed)
+        self.ui.sidebar_treeview.setHeaderHidden(True)
+        self.ui.sidebar_treeview.clicked.connect(self.file_view_changed)
         # create workspace
         self.workspace = Workspace()
         # connect output window signals
@@ -126,15 +128,15 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         self.load_settings()
         self.create_live_editors()
         self.update_fonts.emit(self.font)
-        self.show(dockable=True)
+        self.show()
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
         splitter_settings = self.settings.value("splitter")
-        self.editor_splitter.restoreState(splitter_settings)  # type: ignore
+        self.ui.editor_splitter.restoreState(splitter_settings)  # type: ignore
 
         splitter_settings = self.settings.value("vertical_splitter")
-        self.vertical_splitter.restoreState(splitter_settings)  # type: ignore
+        self.ui.vertical_splitter.restoreState(splitter_settings)  # type: ignore
         sz = self.settings.value(
             "size",
         )
@@ -155,8 +157,8 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         self.update_fonts.emit(self.font)
 
     def save_settings(self) -> None:
-        self.settings.setValue("splitter", self.editor_splitter.saveState())  # type: ignore
-        self.settings.setValue("vertical_splitter", self.vertical_splitter.saveState())  # type: ignore
+        self.settings.setValue("splitter", self.ui.editor_splitter.saveState())  # type: ignore
+        self.settings.setValue("vertical_splitter", self.ui.vertical_splitter.saveState())  # type: ignore
         self.settings.setValue("size", self.size())
         self.settings.setValue("workspace", self.workspace.file_name)
         self.settings.beginGroup("Font")
@@ -277,7 +279,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         show_output_window_action = QAction("Show Output Window", self)
         settings_menu.addAction(show_output_window_action)
         show_output_window_action.toggled.connect(
-            lambda state: self.output_window_group_box.setVisible(state)
+            lambda state: self.ui.output_window_group_box.setVisible(state)
         )
         show_output_window_action.setCheckable(True)
         show_output_window_action.setChecked(True)
@@ -287,7 +289,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         show_sidebar_action = QAction("Show Sidebar", self)
         settings_menu.addAction(show_sidebar_action)
         show_sidebar_action.toggled.connect(
-            lambda state: self.side_bar.setVisible(state)
+            lambda state: self.ui.side_bar.setVisible(state)
         )
         show_sidebar_action.setCheckable(True)
         show_sidebar_action.setChecked(True)
@@ -297,7 +299,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         # Menu to main menu bar
         self.menu_bar.addMenu(settings_menu)
 
-        self.main_grid_layout.setMenuBar(self.menu_bar)  # type: ignore
+        self.ui.main_grid_layout.setMenuBar(self.menu_bar)  # type: ignore
 
     def open_file(self) -> None:
         """Open a new file and add to the tabs."""
@@ -322,18 +324,18 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
             show_line_numbers=True,
             live=False,
         )
-        self.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
-        self.editor_tab.setCurrentIndex(0)
-        self.editor_tab.widget(0).setFocus()
+        self.ui.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
+        self.ui.editor_tab.setCurrentIndex(0)
+        self.ui.editor_tab.widget(0).setFocus()
 
     def create_tool_bar(self) -> None:
         """Create the toolbar."""
         self.tool_bar = EditorToolBar(self)  # QToolBar(self)
         # Add to main dialog
-        self.dock_widget.setWidget(self.tool_bar)  # type: ignore
+        self.ui.dock_widget.setWidget(self.tool_bar)  # type: ignore
         self.output_tool_bar = OutputToolBar(self)  # QToolBar(self)
         # Add to main dialog
-        self.output_dock.setWidget(self.output_tool_bar)  # type: ignore
+        self.ui.output_dock.setWidget(self.output_tool_bar)  # type: ignore
 
     def tab_close_requested(self, index: int) -> None:
         """Slot called when a tab close is pressed.
@@ -342,7 +344,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         Parameters :
         index (int) : index of the tab where the close was requested.
         """
-        tab: QTabWidget = self.editor_tab  # type: ignore
+        tab: QTabWidget = self.ui.editor_tab  # type: ignore
         editor: PythonTextEdit = tab.widget(index)  # type: ignore
         file_name = tab.tabText(index)
         # don't close live editors
@@ -382,10 +384,10 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         """
         if self.workspace.is_saved is not True:
             self.save_workspace()
-        tab = self.editor_tab  # type: ignore
+        tab = self.ui.editor_tab  # type: ignore
         tab.clear()
         self.workspace.new()
-        self.sidebar_treeview.clear()
+        self.ui.sidebar_treeview.clear()
         self.create_live_editors()
 
     def save_workspace(self) -> None:
@@ -404,9 +406,9 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         # if not self.workspace.is_saved :
         #     self.save_workspace()
 
-        tab = self.editor_tab  # type: ignore
+        tab = self.ui.editor_tab  # type: ignore
         tab.clear()
-        self.sidebar_treeview.clear()
+        self.ui.sidebar_treeview.clear()
         self.create_live_editors()
 
     def show_line_numbers(self, state):
@@ -474,7 +476,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
                 # self.update_fonts.connect(editor.set_editor_fonts)
                 self.connect_editor_slots(editor)
                 # add to the tab
-                tab = self.editor_tab
+                tab = self.ui.editor_tab
                 tab_index = tab.addTab(editor, icon, short_name)  # type: ignore
                 tab.setTabsClosable(True)
                 tab.setCurrentIndex(tab_index)
@@ -502,13 +504,13 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
     @Slot()
     def tool_bar_run_clicked(self):
         """Slot used by the Toolbar run button."""
-        self.editor_tab.currentWidget().execute_code()
+        self.ui.editor_tab.currentWidget().execute_code()
 
     @Slot(int)
     def tool_bar_goto_changed(self, line: int):
         """Slot used by the Toolbar goto dial."""
         # Note we subtract 1 as the line is defaulting to the correct range
-        self.editor_tab.currentWidget().goto_line(line - 1)
+        self.ui.editor_tab.currentWidget().goto_line(line - 1)
 
     @Slot()
     def tool_bar_run_project_clicked(self):
@@ -516,17 +518,17 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         pass
         file_to_run = self.tool_bar.active_project_file.currentText()
         # first find the index of the active tab
-        tab = self.editor_tab  # type: ignore
+        tab = self.ui.editor_tab  # type: ignore
         index = 0
         for t in range(0, tab.count() + 1):
             if file_to_run == tab.tabText(t):
                 index = t
                 break
-        self.editor_tab.widget(index).execute_code()
+        self.ui.editor_tab.widget(index).execute_code()
 
     def file_view_changed(self, index):
         """Update the editor tab based on the new item."""
-        selector_index = self.sidebar_selector.currentIndex()
+        selector_index = self.ui.sidebar_selector.currentIndex()
         if selector_index == 0:
             item = self.sidebar_models.workspace.itemFromIndex(index)  # item.text(0)
             text = item.text()
@@ -548,7 +550,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         filename (str) : the name to search for and remove
         """
         self.sidebar_models.remove_from_workspace(filename)
-        self.tool_bar.remove_from_active_file_list(filename)
+        self.ui.tool_bar.remove_from_active_file_list(filename)
         # remove from workspace
         self.workspace.remove_file(filename)
 
@@ -558,9 +560,9 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         )
         self.connect_editor_slots(editor)
 
-        self.editor_tab.insertTab(0, editor, self.python_icon, "Python live_window")  # type: ignore
-        self.editor_tab.setCurrentIndex(0)
-        self.editor_tab.widget(0).setFocus()
+        self.ui.editor_tab.insertTab(0, editor, self.python_icon, "Python live_window")  # type: ignore
+        self.ui.editor_tab.setCurrentIndex(0)
+        self.ui.editor_tab.widget(0).setFocus()
         self.sidebar_models.append_to_workspace("Python live_window")
         # add the Mel live window
         editor = MelTextEdit(
@@ -572,10 +574,10 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
             parent=self,
         )
         self.connect_editor_slots(editor)
-        self.editor_tab.insertTab(0, editor, self.mel_icon, "Mel live_window")  # type: ignore
+        self.ui.editor_tab.insertTab(0, editor, self.mel_icon, "Mel live_window")  # type: ignore
         # self.editor_tab.setTabsClosable(False)
-        self.editor_tab.setCurrentIndex(0)
-        self.editor_tab.widget(0).setFocus()
+        self.ui.editor_tab.setCurrentIndex(0)
+        self.ui.editor_tab.widget(0).setFocus()
         self.sidebar_models.append_to_workspace("Mel live_window")
 
     def create_output_window(self) -> None:
@@ -589,34 +591,44 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
         self.output_splitter.addWidget(self.output_window)
         # add the help section and wire up
         self.help_frame = QFrame()
-        if os.system == "Windows":
-            UiLoader().loadUi(
-                self.root_path + "\\plug-ins\\ui\\helpwidget.ui", self.help_frame
-            )
-        else:
-            UiLoader().loadUi(
-                self.root_path + "/plug-ins/ui/helpwidget.ui", self.help_frame
-            )
-        frame_layout = self.help_frame.grid_layout
+        grid_layout = QGridLayout()
+        grid_layout.setObjectName("grid_layout")
+        self.help_frame.setLayout(grid_layout)
+
+        self.help_items = QComboBox()
+        self.help_items.setObjectName("help_items")
+        grid_layout.addWidget(self.help_items, 1, 1, 1, 1)
+
+        self.search_help = QLineEdit(self.help_frame)
+        self.search_help.setObjectName("search_help")
+
+        grid_layout.addWidget(self.search_help, 1, 0, 1, 1)
+
+        self.label = QLabel(self.help_frame)
+        self.label.setObjectName("label")
+
+        grid_layout.addWidget(self.label, 0, 0, 1, 1)
+
+        # frame_layout = self.help_frame.layout()
         self.help_output_window = TextEdit(
             parent=self.help_frame, read_only=True, show_line_numbers=False
         )
-        frame_layout.addWidget(self.help_output_window, 2, 0, 2, 2)
+        grid_layout.addWidget(self.help_output_window, 2, 0, 2, 2)
         #        self.help_frame.addWidget(0, 1, , 2, TextEdit())
         self.output_splitter.addWidget(self.help_frame)
-        self.output_window_layout.addWidget(self.output_splitter)
+        self.ui.output_window_layout.addWidget(self.output_splitter)
         self.maya_cmds = cmds.help("[a-z]*", list=True, lng="Python")
         for c in self.maya_cmds:
-            self.help_frame.help_items.addItem(c)
-        self.help_frame.help_items.currentIndexChanged.connect(self.run_maya_help)
-        self.help_frame.search_help.returnPressed.connect(self.search_maya_help)
+            self.help_items.addItem(c)
+        self.help_items.currentIndexChanged.connect(self.run_maya_help)
+        self.search_help.returnPressed.connect(self.search_maya_help)
         completer = QCompleter(self.maya_cmds)
 
-        self.help_frame.search_help.setCompleter(completer)
+        self.search_help.setCompleter(completer)
 
     @Slot(int)
     def run_maya_help(self, index: int) -> None:
-        command = self.help_frame.help_items.currentText()
+        command = self.help_items.currentText()
         output = cmds.help(command, language="python")
         output = output.strip("\n")
         self.help_output_window.clear()
@@ -624,7 +636,7 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
 
     @Slot(int)
     def search_maya_help(self) -> None:
-        help_text = self.help_frame.search_help.text()
+        help_text = self.search_help.text()
         if help_text in self.maya_cmds:
             output = cmds.help(help_text, language="python")
             output = output.strip("\n")
@@ -642,17 +654,28 @@ class EditorDialog(MayaQWidgetDockableMixin, QDialog):
     def change_active_model(self, index):
         self.sidebar_models.change_active_model(index)
         if index == 0:  # workspace files
-            self.sidebar_treeview.setModel(self.sidebar_models.workspace)
-            self.sidebar_treeview.setHeaderHidden(True)
+            self.ui.sidebar_treeview.setModel(self.sidebar_models.workspace)
+            self.ui.sidebar_treeview.setHeaderHidden(True)
         elif index == 1:  # filesystem mode
 
-            self.sidebar_treeview.setModel(self.sidebar_models.file_system_model)
-            self.sidebar_treeview.setHeaderHidden(False)
+            self.ui.sidebar_treeview.setModel(self.sidebar_models.file_system_model)
+            self.ui.sidebar_treeview.setHeaderHidden(False)
 
-            self.sidebar_treeview.setRootIndex(
+            self.ui.sidebar_treeview.setRootIndex(
                 self.sidebar_models.file_system_model.index(QDir.currentPath())
             )
         elif index == 1:  # Code Outline
 
-            self.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
-            self.sidebar_treeview.setHeaderHidden(True)
+            self.ui.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
+            self.ui.sidebar_treeview.setHeaderHidden(True)
+
+
+class EditorDialogDockable(MayaQWidgetDockableMixin, EditorDialog):
+    def __init__(self, parent=None):
+
+        # do this here so we can run standalone or in maya
+        # if parent is None:
+        #     parent = get_main_window()
+        super().__init__(parent)
+
+        self.show(dockable=True)

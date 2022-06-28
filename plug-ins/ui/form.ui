@@ -52,11 +52,6 @@
             <string>File System</string>
            </property>
           </item>
-          <item>
-           <property name="text">
-            <string>Code Outline</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item>

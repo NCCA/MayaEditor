@@ -23,6 +23,8 @@ import maya.cmds as cmds
 
 
 def editor() -> None:
+    if cmds.workspaceControl("NCCA_Script_EditorWorkspaceControl", exists=True):
+        cmds.deleteUI("NCCA_Script_EditorWorkspaceControl", control=True)
     # if you add a new module to the project add it here
     modules = (
         "MayaEditorCore.EditorDialog",
@@ -49,8 +51,8 @@ def editor() -> None:
         print("deleting and reloading module")
     import MayaEditorCore
 
-    #MayaEditorCore.EditorDialog()
-    cmds.workspaceControl("editor_dialogWorkspaceControl",e=True,visible=True)
+    MayaEditorCore.EditorDialogDockable()
+    cmds.workspaceControl("NCCA_Script_EditorWorkspaceControl", e=True, visible=True)
 
 
 editor()
