@@ -26,6 +26,7 @@ class SideBarModels(QObject):
         self.file_system_model.setRootPath(Path.cwd().name)
         filters = ["*.txt", "*.py", "*.mel", "*.md"]
         self.file_system_model.setNameFilters(filters)
+        self.code_system_model = QStandardItemModel()
 
     def append_to_workspace(self, name: str) -> None:
         """
@@ -50,4 +51,6 @@ class SideBarModels(QObject):
         if index == 0:
             self.active_model = self.workspace
         elif index == 1:
-            self.active_mode = self.file_system_model
+            self.active_model = self.file_system_model
+        elif index == 2:
+            self.active_model = self.code_system_model

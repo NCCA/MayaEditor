@@ -49,7 +49,8 @@ def editor() -> None:
         print("deleting and reloading module")
     import MayaEditorCore
 
-    MayaEditorCore.EditorDialog()
+    #MayaEditorCore.EditorDialog()
+    cmds.workspaceControl("editor_dialogWorkspaceControl",e=True,visible=True)
 
 
 editor()

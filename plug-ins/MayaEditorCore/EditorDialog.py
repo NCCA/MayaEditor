@@ -27,6 +27,7 @@ import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 from maya import utils
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtUiTools import *
@@ -55,7 +56,7 @@ def get_main_window() -> Any:
     return wrapInstance(int(window), QWidget)
 
 
-class EditorDialog(QWidget):
+class EditorDialog(MayaQWidgetDockableMixin, QDialog):
     """Editor Dialog window main class.
 
     Inherits from QDialog and loads the ui from files.
@@ -65,6 +66,7 @@ class EditorDialog(QWidget):
     update_output_html = Signal(str)
     update_fonts = Signal(QFont)
     toggle_line_numbers = Signal(bool)
+    editor_name = "NCCA_Script_Editor"
 
     def __init__(self, parent=None):
         """Construct the class.
@@ -77,7 +79,8 @@ class EditorDialog(QWidget):
         if parent is None:
             parent = get_main_window()
 
-        super().__init__(parent)
+        super(self.__class__, self).__init__(parent)
+        self.setObjectName(self.__class__.editor_name)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
             self.message_callback, ""
@@ -86,14 +89,15 @@ class EditorDialog(QWidget):
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         # Next the UI as again required for other things
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
+        self.object = QObject(self)
         if os.system == "Windows":
-            UiLoader().loadUi(self.root_path + "\\plug-ins\\ui\\form.ui", self)
+            UiLoader().loadUi(self.root_path + "\\plug-ins\\ui\\form.ui", self.object)
             # load icons
             self.python_icon = QIcon(self.root_path + "\\plug-ins\\icons\\python.png")
             self.mel_icon = QIcon(self.root_path + "\\plug-ins\\icons\\mel.png")
             self.text_icon = QIcon(self.root_path + "\\plug-ins\\icons\\text.png")
         else:
-            UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self)
+            UiLoader().loadUi(self.root_path + "/plug-ins/ui/form.ui", self.object)
             # load icons
             self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
             self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
@@ -122,7 +126,7 @@ class EditorDialog(QWidget):
         self.load_settings()
         self.create_live_editors()
         self.update_fonts.emit(self.font)
-        self.show()
+        self.show(dockable=True)
 
     def load_settings(self) -> None:
         """Load in the setting from QSettings for the editor."""
@@ -648,3 +652,7 @@ class EditorDialog(QWidget):
             self.sidebar_treeview.setRootIndex(
                 self.sidebar_models.file_system_model.index(QDir.currentPath())
             )
+        elif index == 1:  # Code Outline
+
+            self.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
+            self.sidebar_treeview.setHeaderHidden(True)
