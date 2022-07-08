@@ -36,6 +36,7 @@ class PythonTextEdit(TextEdit):
     """
 
     completer = QCompleter()
+    code_model_changed = Signal()
 
     def __init__(
         self,
@@ -65,6 +66,7 @@ class PythonTextEdit(TextEdit):
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         # self.setCompleter(self.completer)
         self.copyAvailable.connect(self.selection_changed)
+        self.code_model = list()
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -208,3 +210,7 @@ class PythonTextEdit(TextEdit):
             code_file.write(self.toPlainText())
         self.needs_saving = False
         return True
+
+    def generate_code_model(self):
+        document = self.document()
+        lines_of_code = document.blockCount()

@@ -45,6 +45,8 @@ class MelTextEdit(TextEdit):
     shortcuts zooms and line numbers
     """
 
+    code_model_changed = Signal()
+
     def __init__(
         self,
         read_only: bool = True,
@@ -71,6 +73,7 @@ class MelTextEdit(TextEdit):
         self.live = live
         self.copyAvailable.connect(self.selection_changed)
         self.code_model = list()
+        self.generate_code_model()
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -195,11 +198,10 @@ class MelTextEdit(TextEdit):
         with open(self.filename, "w") as code_file:
             code_file.write(self.toPlainText())
         self.needs_saving = False
-        return True
-
-    def text_changed(self):
+        # update code model on save
         self.generate_code_model()
-        return super().text_changed()
+
+        return True
 
     def extract_mel_function(self, code: str) -> str:
         """
@@ -223,3 +225,5 @@ class MelTextEdit(TextEdit):
             elif "proc" in text:
                 function = self.extract_mel_function(text)
                 self.code_model.append(["proc", line + 1, function])
+        # Need to signal code model has changed
+        self.code_model_changed.emit()

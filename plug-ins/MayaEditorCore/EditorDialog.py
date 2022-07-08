@@ -118,11 +118,11 @@ class EditorDialog(QDialog):
         # connect tab close event
         self.ui.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
         self.ui.editor_tab.currentChanged.connect(
-            self.sidebar_models.editor_tab_updated
+            self.sidebar_models.code_model_needs_update
         )
-        # setup file view sidebar
+        # setup  view sidebar
         self.ui.sidebar_treeview.setHeaderHidden(True)
-        self.ui.sidebar_treeview.clicked.connect(self.file_view_changed)
+        self.ui.sidebar_treeview.clicked.connect(self.sidebar_view_changed)
         # create workspace
         self.workspace = Workspace()
         # connect output window signals
@@ -482,6 +482,9 @@ class EditorDialog(QDialog):
                 # Add to the active files to run
                 if path.suffix in (".mel", ".py"):
                     self.tool_bar.add_to_active_file_list(short_name)
+                    editor.code_model_changed.connect(
+                        self.sidebar_models.code_model_needs_update
+                    )
 
                 self.workspace.add_file(code_file_name)
                 # self.update_fonts.connect(editor.set_editor_fonts)
@@ -537,8 +540,8 @@ class EditorDialog(QDialog):
                 break
         self.ui.editor_tab.widget(index).execute_code()
 
-    def file_view_changed(self, index):
-        """Update the editor tab based on the new item."""
+    def sidebar_view_changed(self, index):
+        """Update the sidebar model based on the index"""
         selector_index = self.ui.sidebar_selector.currentIndex()
         if selector_index == 0:
             item = self.sidebar_models.workspace.itemFromIndex(index)  # item.text(0)

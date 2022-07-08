@@ -50,7 +50,10 @@ class SideBarModels(QObject):
     def create_mel_model(self, widget):
         for proc in widget.code_model:
             item = QStandardItem()
-            item.setText(proc[2])
+            scope = "(P)"
+            if proc[0] == "global":
+                scope = "(G) "
+            item.setText(f"{scope} {proc[2]}")
             item.setData(int(proc[1]))
             self.code_system_model.appendRow(item)
 
@@ -66,7 +69,7 @@ class SideBarModels(QObject):
             print("have python editor")
 
     @Slot()
-    def editor_tab_updated(self):
+    def code_model_needs_update(self):
         if self.active_model == self.code_system_model:
             self.generate_code_model()
 
