@@ -14,6 +14,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """MelTextEdit and related classes this Class extends the QPlainTextEdit."""
 import importlib.util
+from lib2to3.pgen2.pgen import generate_grammar
+from pydoc import doc
 from typing import Any, Callable, Optional, Type
 
 import maya.api.OpenMaya as OpenMaya
@@ -68,6 +70,7 @@ class MelTextEdit(TextEdit):
         self.execute_selected = False
         self.live = live
         self.copyAvailable.connect(self.selection_changed)
+        self.code_model = list()
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -193,3 +196,30 @@ class MelTextEdit(TextEdit):
             code_file.write(self.toPlainText())
         self.needs_saving = False
         return True
+
+    def text_changed(self):
+        self.generate_code_model()
+        return super().text_changed()
+
+    def extract_mel_function(self, code: str) -> str:
+        """
+        Scan the mel function and extract, easiest way is to search for
+        ( as a function must have this.
+        """
+        code = code.split(" ")
+        for exp in code:
+            if "(" in exp:
+                return exp[: exp.find("(")]
+
+    def generate_code_model(self):
+        document = self.document()
+        lines_of_code = document.blockCount()
+        self.code_model.clear()
+        for line in range(lines_of_code):
+            text = document.findBlockByLineNumber(line).text()
+            if "global" in text and "proc" in text:
+                function = self.extract_mel_function(text)
+                self.code_model.append(["global", line + 1, function])
+            elif "proc" in text:
+                function = self.extract_mel_function(text)
+                self.code_model.append(["proc", line + 1, function])

@@ -86,6 +86,7 @@ class TextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.textChanged.connect(self.text_changed)
 
     def text_changed(self):
         """Signal called when text changed.

@@ -114,8 +114,12 @@ class EditorDialog(QDialog):
         self.sidebar_models = SideBarModels(self)
         self.ui.sidebar_treeview.setModel(self.sidebar_models.active_model)
         self.ui.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
+
         # connect tab close event
         self.ui.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
+        self.ui.editor_tab.currentChanged.connect(
+            self.sidebar_models.editor_tab_updated
+        )
         # setup file view sidebar
         self.ui.sidebar_treeview.setHeaderHidden(True)
         self.ui.sidebar_treeview.clicked.connect(self.file_view_changed)
@@ -550,6 +554,9 @@ class EditorDialog(QDialog):
         elif selector_index == 1:  # file system view
             path = self.sidebar_models.file_system_model.filePath(index)
             self.create_editor_and_load_files(path)
+        elif selector_index == 2:  # Code_model_view
+            item = self.sidebar_models.code_system_model.itemFromIndex(index)
+            self.ui.editor_tab.currentWidget().goto_line(item.data())
 
     def remove_from_open_files(self, filename: str) -> None:
         """Remove filename from sidebar.

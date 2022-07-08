@@ -4,6 +4,9 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
+from .MelTextEdit import MelTextEdit
+from .PythonTextEdit import PythonTextEdit
+
 """
 This class contains the different models used by the sidebar, this allows us to switch the display
 from Active Files (Workspace mode), file system, and class / function navigator
@@ -20,6 +23,7 @@ class SideBarModels(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.parent = parent
         self.workspace = QStandardItemModel()
         self.active_model = self.workspace
         self.file_system_model = QFileSystemModel()
@@ -43,13 +47,28 @@ class SideBarModels(QObject):
         for i in items:
             self.workspace.removeRow(i.row())
 
+    def create_mel_model(self, widget):
+        for proc in widget.code_model:
+            item = QStandardItem()
+            item.setText(proc[2])
+            item.setData(int(proc[1]))
+            self.code_system_model.appendRow(item)
+
+    @Slot()
     def generate_code_model(self, text=""):
         self.code_system_model.clear()
-        item = QStandardItem()
-        item.setText("Global")
-        self.code_system_model.insertRow(0, item)
-        item.setText("Proc")
-        self.code_system_model.insertRow(0, item)
+        tab = self.parent.ui.editor_tab
+        widget = tab.widget(tab.currentIndex())
+        if isinstance(widget, MelTextEdit):
+            self.create_mel_model(widget)
+
+        elif isinstance(widget, PythonTextEdit):
+            print("have python editor")
+
+    @Slot()
+    def editor_tab_updated(self):
+        if self.active_model == self.code_system_model:
+            self.generate_code_model()
 
     @Slot(int)
     def change_active_model(self, index):

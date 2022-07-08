@@ -100,13 +100,16 @@ class PythonHighlighter(QSyntaxHighlighter):
         rules = []
         # Keyword, operator, and brace rules
         rules += [
-            (r"\b%s\b" % w, 0, self.styles["keyword"]) for w in PythonHighlighter.keywords
+            (r"\b%s\b" % w, 0, self.styles["keyword"])
+            for w in PythonHighlighter.keywords
         ]
 
         rules += [
             (r"%s" % o, 0, self.styles["operator"]) for o in PythonHighlighter.operators
         ]
-        rules += [(r"%s" % b, 0, self.styles["brace"]) for b in PythonHighlighter.braces]
+        rules += [
+            (r"%s" % b, 0, self.styles["brace"]) for b in PythonHighlighter.braces
+        ]
 
         # All other rules
         rules += [
@@ -208,5 +211,4 @@ class PythonHighlighter(QSyntaxHighlighter):
         # Return True if still inside a multi-line string, False otherwise
         if self.currentBlockState() == in_state:
             return True
-        else:
-            return False
+        return False
