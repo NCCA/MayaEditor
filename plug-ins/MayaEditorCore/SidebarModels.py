@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from PySide2.QtCore import *
@@ -31,15 +32,42 @@ class SideBarModels(QObject):
         filters = ["*.txt", "*.py", "*.mel", "*.md"]
         self.file_system_model.setNameFilters(filters)
         self.code_system_model = QStandardItemModel()
+        if os.system == "Windows":
+            # load icons
+            self.class_icon = QIcon(
+                self.parent.root_path + "\\plug-ins\\icons\\class.png"
+            )
+            self.method_icon = QIcon(
+                self.parent.root_path + "\\plug-ins\\icons\\method.png"
+            )
+            self.function_icon = QIcon(
+                self.parent.root_path + "\\plug-ins\\icons\\function.png"
+            )
 
-    def append_to_workspace(self, name: str) -> None:
+        else:
+            # load icons
+            self.class_icon = QIcon(self.parent.root_path + "/plug-ins/icons/class.png")
+            self.method_icon = QIcon(
+                self.parent.root_path + "/plug-ins/icons/method.png"
+            )
+            self.function_icon = QIcon(
+                self.parent.root_path + "/plug-ins/icons/function.png"
+            )
+            self.proc_icon = QIcon(self.parent.root_path + "/plug-ins/icons/proc.png")
+            self.global_icon = QIcon(
+                self.parent.root_path + "/plug-ins/icons/global.png"
+            )
+
+    def append_to_workspace(self, name: str, icon: QIcon) -> None:
         """
         Add a short name to our workspace model, this name will be used by the main editor when removing
         Parameters :
         name(str) : the short name to display in the model
+        icon(QIcon) : the icon to display
         """
         item = QStandardItem()
         item.setText(name)
+        item.setIcon(icon)
         self.workspace.insertRow(0, item)
 
     def remove_from_workspace(self, name: str) -> None:
@@ -50,32 +78,33 @@ class SideBarModels(QObject):
     def create_mel_model(self, widget):
         for proc in widget.code_model:
             item = QStandardItem()
-            scope = "(P)"
+            icon = self.proc_icon
             if proc.scope == "global":
-                scope = "(G) "
-            item.setText(f"{scope} {proc.function_name}")
+                icon = self.global_icon
+            item.setText(f"{proc.function_name}")
             item.setData(int(proc.line_number))
+            item.setIcon(icon)
             self.code_system_model.appendRow(item)
 
     def create_python_model(self, widget):
         for item in widget.code_model:
             entry = QStandardItem()
             if isinstance(item, code_model_data):
-                method_or_func = "(M)"
-                if item.type == "function":
-                    method_or_func = "(F)"
-                entry.setText(f"{method_or_func} {item.name}")
+                entry.setText(f"{item.name}")
                 entry.setData(item.line_number)
+                entry.setIcon(self.function_icon)
                 self.code_system_model.appendRow(entry)
             elif isinstance(item, dict):
                 class_info = list(item.keys())[0]
-                entry.setText(f"(C) {class_info.name}")
+                entry.setText(f"{class_info.name}")
+                entry.setIcon(self.class_icon)
                 entry.setData(class_info.line_number)
                 methods = list(item.values())
                 for m in methods[0]:
                     method = QStandardItem()
-                    method.setText(f"(M) {m.name}")
+                    method.setText(f"{m.name}")
                     method.setData(m.line_number)
+                    method.setIcon(self.method_icon)
                     entry.appendRow(method)
                 self.code_system_model.appendRow(entry)
 

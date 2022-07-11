@@ -495,7 +495,7 @@ class EditorDialog(QDialog):
                 tab.setTabsClosable(True)
                 tab.setCurrentIndex(tab_index)
                 # add to the file view and run menu
-                self.sidebar_models.append_to_workspace(short_name)
+                self.sidebar_models.append_to_workspace(short_name, icon)
                 self.update_fonts.emit(self.font)
 
         else:
@@ -580,7 +580,7 @@ class EditorDialog(QDialog):
         self.ui.editor_tab.insertTab(0, editor, self.python_icon, "Python live_window")  # type: ignore
         self.ui.editor_tab.setCurrentIndex(0)
         self.ui.editor_tab.widget(0).setFocus()
-        self.sidebar_models.append_to_workspace("Python live_window")
+        self.sidebar_models.append_to_workspace("Python live_window", self.python_icon)
         # add the Mel live window
         editor = MelTextEdit(
             code="",
@@ -595,7 +595,7 @@ class EditorDialog(QDialog):
         # self.editor_tab.setTabsClosable(False)
         self.ui.editor_tab.setCurrentIndex(0)
         self.ui.editor_tab.widget(0).setFocus()
-        self.sidebar_models.append_to_workspace("Mel live_window")
+        self.sidebar_models.append_to_workspace("Mel live_window", self.mel_icon)
 
     def create_output_window(self) -> None:
         self.output_window = TextEdit(
