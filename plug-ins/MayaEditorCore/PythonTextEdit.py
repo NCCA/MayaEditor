@@ -14,7 +14,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """PythonTextEdit and related classes this Class extends the QPlainTextEdit."""
+import ast
 import importlib.util
+from collections import namedtuple
 from typing import Any, Callable, Optional, Type
 
 # import jedi
@@ -26,6 +28,10 @@ from PySide2.QtWidgets import *
 
 from .PythonHighlighter import PythonHighlighter
 from .TextEdit import TextEdit
+
+is_class = False
+code_model_data = namedtuple("CodeModel", "type line_number name")
+class_model_data = namedtuple("Class", "name line_number")
 
 
 class PythonTextEdit(TextEdit):
@@ -67,6 +73,7 @@ class PythonTextEdit(TextEdit):
         # self.setCompleter(self.completer)
         self.copyAvailable.connect(self.selection_changed)
         self.code_model = list()
+        self.generate_code_model()
 
     def eventFilter(self, obj: QObject, event: QEvent):
         """Event filter for key events.
@@ -209,8 +216,33 @@ class PythonTextEdit(TextEdit):
         with open(self.filename, "w") as code_file:
             code_file.write(self.toPlainText())
         self.needs_saving = False
+        self.generate_code_model()
+
         return True
 
+    def extract_classes_and_functions(self, node_to_traverse, current_object):
+        global is_class
+        for node in node_to_traverse.body:
+            if isinstance(node, ast.ClassDef):
+                is_class = True
+                current_object.append({class_model_data(node.name, node.lineno): []})
+                self.extract_classes_and_functions(
+                    node,
+                    current_object[-1:][0][class_model_data(node.name, node.lineno)],
+                )
+                is_class = False
+            if isinstance(node, ast.FunctionDef):
+                func = "function"
+                if is_class:
+                    func = "method"
+                current_object.append(
+                    code_model_data(type=func, line_number=node.lineno, name=node.name)
+                )
+
     def generate_code_model(self):
-        document = self.document()
-        lines_of_code = document.blockCount()
+        document = self.document().toRawText()
+        document = document.replace("\u2029", "\n")
+        node_to_traverse = ast.parse(document)
+        self.extract_classes_and_functions(node_to_traverse, self.code_model)
+
+        self.code_model_changed.emit()

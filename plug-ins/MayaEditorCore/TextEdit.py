@@ -71,6 +71,8 @@ class TextEdit(QPlainTextEdit):
         self.installEventFilter(self)
         self.setReadOnly(read_only)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.ensureCursorVisible()
+
         self.filename = filename
         if code:
             self.setPlainText(code)
@@ -85,7 +87,6 @@ class TextEdit(QPlainTextEdit):
         self.needs_saving = False
         # hack as textChanged signal always called on set of text
         self.first_edit = False
-        self.setLineWrapMode(QPlainTextEdit.NoWrap)
         self.textChanged.connect(self.text_changed)
 
     def text_changed(self):
@@ -188,6 +189,7 @@ class TextEdit(QPlainTextEdit):
                 return
 
         cursor = QTextCursor(self.document().findBlockByLineNumber(line_number - 1))
+        self.ensureCursorVisible()
         self.setTextCursor(cursor)
 
     def save_file(self):

@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """MelTextEdit and related classes this Class extends the QPlainTextEdit."""
 import importlib.util
+from collections import namedtuple
 from lib2to3.pgen2.pgen import generate_grammar
 from pydoc import doc
 from typing import Any, Callable, Optional, Type
@@ -46,6 +47,7 @@ class MelTextEdit(TextEdit):
     """
 
     code_model_changed = Signal()
+    code_model_data = namedtuple("CodeModel", "scope line_number function_name")
 
     def __init__(
         self,
@@ -221,9 +223,17 @@ class MelTextEdit(TextEdit):
             text = document.findBlockByLineNumber(line).text()
             if "global" in text and "proc" in text:
                 function = self.extract_mel_function(text)
-                self.code_model.append(["global", line + 1, function])
+                self.code_model.append(
+                    self.code_model_data(
+                        scope="global", line_number=line + 1, function_name=function
+                    )
+                )
             elif "proc" in text:
                 function = self.extract_mel_function(text)
-                self.code_model.append(["proc", line + 1, function])
+                self.code_model.append(
+                    self.code_model_data(
+                        scope="proc", line_number=line + 1, function_name=function
+                    )
+                )
         # Need to signal code model has changed
         self.code_model_changed.emit()

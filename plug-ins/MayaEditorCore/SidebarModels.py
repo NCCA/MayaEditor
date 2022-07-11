@@ -5,7 +5,7 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
 from .MelTextEdit import MelTextEdit
-from .PythonTextEdit import PythonTextEdit
+from .PythonTextEdit import PythonTextEdit, class_model_data, code_model_data
 
 """
 This class contains the different models used by the sidebar, this allows us to switch the display
@@ -51,11 +51,33 @@ class SideBarModels(QObject):
         for proc in widget.code_model:
             item = QStandardItem()
             scope = "(P)"
-            if proc[0] == "global":
+            if proc.scope == "global":
                 scope = "(G) "
-            item.setText(f"{scope} {proc[2]}")
-            item.setData(int(proc[1]))
+            item.setText(f"{scope} {proc.function_name}")
+            item.setData(int(proc.line_number))
             self.code_system_model.appendRow(item)
+
+    def create_python_model(self, widget):
+        for item in widget.code_model:
+            entry = QStandardItem()
+            if isinstance(item, code_model_data):
+                method_or_func = "(M)"
+                if item.type == "function":
+                    method_or_func = "(F)"
+                entry.setText(f"{method_or_func} {item.name}")
+                entry.setData(item.line_number)
+                self.code_system_model.appendRow(entry)
+            elif isinstance(item, dict):
+                class_info = list(item.keys())[0]
+                entry.setText(f"(C) {class_info.name}")
+                entry.setData(class_info.line_number)
+                methods = list(item.values())
+                for m in methods[0]:
+                    method = QStandardItem()
+                    method.setText(f"(M) {m.name}")
+                    method.setData(m.line_number)
+                    entry.appendRow(method)
+                self.code_system_model.appendRow(entry)
 
     @Slot()
     def generate_code_model(self, text=""):
@@ -66,7 +88,7 @@ class SideBarModels(QObject):
             self.create_mel_model(widget)
 
         elif isinstance(widget, PythonTextEdit):
-            print("have python editor")
+            self.create_python_model(widget)
 
     @Slot()
     def code_model_needs_update(self):
