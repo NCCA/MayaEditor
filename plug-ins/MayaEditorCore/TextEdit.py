@@ -25,15 +25,7 @@ import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from PySide2.QtWidgets import (
-    QFileDialog,
-    QInputDialog,
-    QLineEdit,
-    QPlainTextEdit,
-    QTextEdit,
-    QToolTip,
-    QWidget,
-)
+from PySide2.QtWidgets import *
 
 from .LineNumberArea import LineNumberArea
 
@@ -48,6 +40,9 @@ class TextEdit(QPlainTextEdit):
     update_output = Signal(str)
     update_output_html = Signal(str)
     draw_line = Signal()
+    # find_dialog = QDialog(
+    #     None, Qt.Popup | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+    # )
 
     def __init__(
         self,
@@ -88,6 +83,7 @@ class TextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.textChanged.connect(self.text_changed)
+        self.build_find_dialog()
 
     def text_changed(self):
         """Signal called when text changed.
@@ -140,6 +136,9 @@ class TextEdit(QPlainTextEdit):
                 return True
             elif event.key() == Qt.Key_G and event.modifiers() == Qt.ControlModifier:
                 self.goto_line()
+                return True
+            elif event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
+                self.show_find_dialog()
                 return True
             else:
                 return False
@@ -217,6 +216,30 @@ class TextEdit(QPlainTextEdit):
             code_file.write(self.toPlainText())
         self.needs_saving = False
         return True
+
+    def show_find_dialog(self):
+        if self.find_dialog.isVisible():
+            self.find_dialog.hide()
+            self.find_dialog.lower()
+            print("hide")
+        else:
+
+            self.find_dialog.setModal
+            # self.parent.layout().addWidget(self.find_dialog)
+            # self.find_dialog.setParent(self)
+            # self.find_dialog.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+            print("show")
+            geometry = self.parent.geometry()
+            pos = QWidget.mapToGlobal(
+                self.parent,
+                QPoint(geometry.width() - self.find_dialog.width(), geometry.top()),
+            )
+            print(geometry, pos)
+            self.find_dialog.move(pos.x(), pos.y())
+            # self.find_dialog.resize(100, 50)
+            self.find_dialog.show()
+            self.find_dialog.raise_()
+            self.find_dialog.activateWindow()
 
     @Slot(str)
     def append_plain_text(self, text: str):
@@ -328,3 +351,17 @@ class TextEdit(QPlainTextEdit):
     def toggle_line_number(self, state):
         self.show_line_numbers = state
         self.update()
+
+    # @classmethod
+    def build_find_dialog(self):
+        self.find_dialog = QDialog(self.parent, Qt.Popup)
+
+        layout = QGridLayout()
+        self.find_dialog.setLayout(layout)
+        text_search = QLineEdit()
+        text_search.setToolTip("search")
+        layout.addWidget(text_search, 0, 0, 1, 2)
+
+        replace = QLineEdit()
+        layout.addWidget(replace, 1, 0, 1, 2)
+        replace.setToolTip("replace")

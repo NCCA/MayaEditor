@@ -334,6 +334,7 @@ class EditorDialog(QDialog):
             read_only=False,
             show_line_numbers=True,
             live=False,
+            parent=self,
         )
         self.ui.editor_tab.insertTab(0, editor, "untitled.py")  # type: ignore
         self.ui.editor_tab.setCurrentIndex(0)
@@ -447,6 +448,8 @@ class EditorDialog(QDialog):
             code_file_name (str) : full path to the file to load will be truncated to short name for the tabs be getting the last name / extension
 
         """
+        tab = self.ui.editor_tab
+
         path = Path(code_file_name)
         if path.is_file():
             with open(code_file_name, "r") as code_file:
@@ -458,6 +461,7 @@ class EditorDialog(QDialog):
                         live=False,
                         show_line_numbers=True,
                         read_only=False,
+                        parent=tab,
                     )
                     icon = self.python_icon
                 elif path.suffix == ".mel":
@@ -467,6 +471,7 @@ class EditorDialog(QDialog):
                         live=False,
                         show_line_numbers=True,
                         read_only=False,
+                        parent=tab,
                     )
                     icon = self.mel_icon
                 else:
@@ -475,6 +480,7 @@ class EditorDialog(QDialog):
                         filename=code_file_name,
                         show_line_numbers=True,
                         read_only=False,
+                        parent=tab,
                     )
                     icon = self.text_icon
                     editor.set_editor_fonts(self.font)
@@ -490,7 +496,6 @@ class EditorDialog(QDialog):
                 # self.update_fonts.connect(editor.set_editor_fonts)
                 self.connect_editor_slots(editor)
                 # add to the tab
-                tab = self.ui.editor_tab
                 tab_index = tab.addTab(editor, icon, short_name)  # type: ignore
                 tab.setTabsClosable(True)
                 tab.setCurrentIndex(tab_index)
@@ -573,7 +578,11 @@ class EditorDialog(QDialog):
 
     def create_live_editors(self) -> None:
         editor = PythonTextEdit(
-            code="", filename="live_window", live=True, read_only=False, parent=self
+            code="",
+            filename="live_window",
+            live=True,
+            read_only=False,
+            parent=self.ui.editor_tab,
         )
         self.connect_editor_slots(editor)
 
@@ -588,7 +597,7 @@ class EditorDialog(QDialog):
             live=True,
             read_only=False,
             show_line_numbers=True,
-            parent=self,
+            parent=self.ui.editor_tab,
         )
         self.connect_editor_slots(editor)
         self.ui.editor_tab.insertTab(0, editor, self.mel_icon, "Mel live_window")  # type: ignore

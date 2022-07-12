@@ -102,7 +102,7 @@ class MelTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return False  # return super().eventFilter(obj, event)
+                return super().eventFilter(obj, event)
         else:
             return False
 

@@ -100,7 +100,7 @@ class PythonTextEdit(TextEdit):
                 self.save_file()
                 return True
             else:
-                return False
+                return super().eventFilter(obj, event)
         else:
             return False
 
