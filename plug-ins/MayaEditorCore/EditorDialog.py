@@ -20,6 +20,7 @@ import os
 import socket
 import sys
 from pathlib import Path
+from tkinter.filedialog import FileDialog
 from typing import Any
 
 import maya.api.OpenMaya as OpenMaya
@@ -38,6 +39,7 @@ from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
 from .EditorToolBar import EditorToolBar
+from .FindDialog import FindDialog
 from .MainUI import Ui_editor_dialog
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar

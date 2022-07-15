@@ -27,6 +27,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
+from .FindDialog import FindDialog
 from .LineNumberArea import LineNumberArea
 
 
@@ -40,8 +41,8 @@ class TextEdit(QPlainTextEdit):
     update_output = Signal(str)
     update_output_html = Signal(str)
     draw_line = Signal()
-    # find_dialog = QDialog(
-    #     None, Qt.Popup | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+    # find_dialog = FindDialog(None)  # QDialog(
+    # #     None, Qt.Popup | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     # )
 
     def __init__(
@@ -67,10 +68,15 @@ class TextEdit(QPlainTextEdit):
         self.setReadOnly(read_only)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
         self.ensureCursorVisible()
-
+        # only search in editors with code so set to non and create if we have code
+        self.find_dialog = None
+        self.found_index = 0
+        self.found_count = 0
         self.filename = filename
         if code:
             self.setPlainText(code)
+            self.find_dialog = FindDialog(self)
+            self.find_dialog.hide()
         self.installEventFilter(self)
         # if we need to display line numbers install events
         self.show_line_numbers = show_line_numbers
@@ -83,7 +89,6 @@ class TextEdit(QPlainTextEdit):
         # hack as textChanged signal always called on set of text
         self.first_edit = False
         self.textChanged.connect(self.text_changed)
-        self.build_find_dialog()
 
     def text_changed(self):
         """Signal called when text changed.
@@ -140,6 +145,10 @@ class TextEdit(QPlainTextEdit):
             elif event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
                 self.show_find_dialog()
                 return True
+            # filter out the return press when searching
+            elif event.key() == Qt.Key_Return and not self.hasFocus():
+                return True
+
             else:
                 return False
         else:
@@ -218,28 +227,22 @@ class TextEdit(QPlainTextEdit):
         return True
 
     def show_find_dialog(self):
-        if self.find_dialog.isVisible():
-            self.find_dialog.hide()
-            self.find_dialog.lower()
-            print("hide")
-        else:
+        if self.find_dialog:
+            if self.find_dialog.isVisible():
+                self.find_dialog.hide()
+                # self.find_dialog.lower()
+            else:
 
-            self.find_dialog.setModal
-            # self.parent.layout().addWidget(self.find_dialog)
-            # self.find_dialog.setParent(self)
-            # self.find_dialog.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-            print("show")
-            geometry = self.parent.geometry()
-            pos = QWidget.mapToGlobal(
-                self.parent,
-                QPoint(geometry.width() - self.find_dialog.width(), geometry.top()),
-            )
-            print(geometry, pos)
-            self.find_dialog.move(pos.x(), pos.y())
-            # self.find_dialog.resize(100, 50)
-            self.find_dialog.show()
-            self.find_dialog.raise_()
-            self.find_dialog.activateWindow()
+                geometry = self.parent.geometry()
+
+                # print(geometry, pos)
+                self.find_dialog.move(
+                    geometry.width() - self.find_dialog.width() - 10, geometry.top()
+                )
+                self.find_dialog.show()
+                self.find_dialog.text_search.setFocus()
+                # self.find_dialog.raise_()
+                # self.find_dialog.activateWindow()
 
     @Slot(str)
     def append_plain_text(self, text: str):
@@ -352,16 +355,25 @@ class TextEdit(QPlainTextEdit):
         self.show_line_numbers = state
         self.update()
 
-    # @classmethod
-    def build_find_dialog(self):
-        self.find_dialog = QDialog(self.parent, Qt.Popup)
+    @Slot(str)
+    def search_text(self, text: str):
+        # Get count
+        self.found_count = 1
+        self.found_index = 1
+        while self.find(text):
+            self.found_count += 1
+        self.find_dialog.items_found.setText(
+            f"{self.found_index} of  {self.found_count}"
+        )
+        self.moveCursor(QTextCursor.Start)
+        self.find(text)
 
-        layout = QGridLayout()
-        self.find_dialog.setLayout(layout)
-        text_search = QLineEdit()
-        text_search.setToolTip("search")
-        layout.addWidget(text_search, 0, 0, 1, 2)
-
-        replace = QLineEdit()
-        layout.addWidget(replace, 1, 0, 1, 2)
-        replace.setToolTip("replace")
+    def find_next(self, text: str):
+        if self.find(text):
+            self.found_index += 1
+            self.find_dialog.items_found.setText(
+                f"{self.found_index} of  {self.found_count}"
+            )
+        else:
+            self.moveCursor(QTextCursor.Start)
+            self.found_index = 1
