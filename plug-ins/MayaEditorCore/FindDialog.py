@@ -23,6 +23,18 @@ class FindDialog(QFrame):
         self.items_found = QLabel("no results found")
         self.layout.addWidget(self.items_found, 0, 3)
 
+        self.case_sensitive = QToolButton()
+        self.case_sensitive.setCheckable(True)
+        self.case_sensitive.setIcon(QIcon(":/icons/caseSensitive.png"))
+        self.case_sensitive.setToolTip("match case")
+        self.layout.addWidget(self.case_sensitive, 0, 4)
+
+        self.whole_word = QToolButton()
+        self.whole_word.setCheckable(True)
+        self.whole_word.setIcon(QIcon(":/icons/wholeWord.png"))
+        self.whole_word.setToolTip("match whole word")
+        self.layout.addWidget(self.whole_word, 0, 5)
+
         self.hide_button = QToolButton()
         self.hide_button.setIcon(QIcon(":/icons/closeFind.png"))
 

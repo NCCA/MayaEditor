@@ -11,5 +11,7 @@
         <file>icons/SearchUp.png</file>
         <file>icons/text.png</file>
         <file>icons/closeFind.png</file>
+        <file>icons/caseSensitive.png</file>
+        <file>icons/wholeWord.png</file>
     </qresource>
 </RCC>

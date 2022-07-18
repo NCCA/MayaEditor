@@ -38,6 +38,7 @@ from PySide2.QtWidgets import *
 from shiboken2 import wrapInstance  # type: ignore
 
 from .CustomUILoader import UiLoader
+from .EditorIcons import *
 from .EditorToolBar import EditorToolBar
 from .FindDialog import FindDialog
 from .MainUI import Ui_editor_dialog
@@ -93,16 +94,9 @@ class EditorDialog(QDialog):
         self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
         # Next the UI as again required for other things
         self.root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
-        if os.system == "Windows":
-            # load icons
-            self.python_icon = QIcon(self.root_path + "\\plug-ins\\icons\\python.png")
-            self.mel_icon = QIcon(self.root_path + "\\plug-ins\\icons\\mel.png")
-            self.text_icon = QIcon(self.root_path + "\\plug-ins\\icons\\text.png")
-        else:
-            # load icons
-            self.python_icon = QIcon(self.root_path + "/plug-ins/icons/python.png")
-            self.mel_icon = QIcon(self.root_path + "/plug-ins/icons/mel.png")
-            self.text_icon = QIcon(self.root_path + "/plug-ins/icons/text.png")
+        self.python_icon = QIcon(":/icons/python.png")
+        self.mel_icon = QIcon(":icons/mel.png")
+        self.text_icon = QIcon(":icons/text.png")
 
         self.ui = Ui_editor_dialog()
         self.ui.setupUi(self)
