@@ -40,7 +40,7 @@ def editor() -> None:
         "MayaEditorCore.MelTextEdit",
         "MayaEditorCore.SidebarModels",
         "MayaEditorCore.FindDialog",
-        
+        "MayaEditorCore.EditorIcons",
     )
     # query the MayaEditor module file for location of source
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")

@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/class.png</file>
+        <file>icons/function.png</file>
+        <file>icons/global.png</file>
+        <file>icons/mel.png</file>
+        <file>icons/method.png</file>
+        <file>icons/proc.png</file>
+        <file>icons/python.png</file>
+        <file>icons/SearchDown.png</file>
+        <file>icons/SearchUp.png</file>
+        <file>icons/text.png</file>
+        <file>icons/closeFind.png</file>
+    </qresource>
+</RCC>
