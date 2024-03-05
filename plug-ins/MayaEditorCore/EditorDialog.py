@@ -54,9 +54,9 @@ def get_main_window() -> Any:
 
 
 
-#class EditorDialog(MayaQWidgetDockableMixin,QWidget):
 class EditorDialogCore(QDialog):
-    """Editor Dialog window main class.
+    """Editor Dialog window main class we inherit from this for either a
+    standalone editor or a mixin (dockable) maya one.
 
     Inherits from QDialog and loads the ui from files.
     """
@@ -74,12 +74,8 @@ class EditorDialogCore(QDialog):
         parent (QWidget) : the Maya parent window Note this is set to None so we can use the get_main_window() function in maya
         If we run standalone we need to pass in a main window instance (see the EditorStandalone.py module)
         """
-        # do this here so we can run standalone or in maya
-        # if parent is None:
-        #     parent = get_main_window()
         super(EditorDialogCore, self).__init__(parent=parent)
 
-        #super().__init__(parent)
         self.setObjectName(self.__class__.editor_name)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
