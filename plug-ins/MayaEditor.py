@@ -23,6 +23,8 @@ from PySide2.QtCore import QFile
 from PySide2.QtGui import QColor, QFont
 from PySide2.QtUiTools import QUiLoader
 from shiboken2 import wrapInstance  # type: ignore
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+from builtins import int
 
 # Grab the module root so we can append our python path
 root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
@@ -43,13 +45,41 @@ except ImportError:
     # throw exception and let maya deal with it
     raise
 
+MayaEditorMixinWindow=None
 
-def maya_useNewAPI() -> None:
-    """
-    Can either use this function (which works on earlier versions)
-    or we can set maya_useNewAPI = True
-    """
-    pass
+def MayaEditorUIScript(restore=False):
+    global MayaEditorMixinWindow
+    import MayaEditorCore
+
+    ''' When the control is restoring, the workspace control has already been created and
+        all that needs to be done is restoring its UI.
+    '''
+    if restore == True:
+        # Grab the created workspace control with the following.
+        restoredControl = omui.MQtUtil.getCurrentParent()
+
+    if MayaEditorMixinWindow is None:
+        # Create a custom mixin widget for the first time
+        print("creating a new ui")
+        MayaEditorMixinWindow = MayaEditorCore.EditorDialog()
+        MayaEditorMixinWindow.setObjectName('MayaEditor')
+
+    if restore == True:
+        # Add custom mixin widget to the workspace control
+        mixinPtr = omui.MQtUtil.findControl(MayaEditorMixinWindow.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(mixinPtr), int(restoredControl))
+    else:
+        # Create a workspace control for the mixin widget by passing all the needed parameters. See workspaceControl command documentation for all available flags.
+        MayaEditorMixinWindow.show(dockable=True, height=600, width=800, uiScript='MayaEditorUIScript(restore=True)')
+
+    return MayaEditorMixinWindow
+
+
+
+''' Using the workspaceControl Maya command to query/edit flags about the created 
+    we can use maya.cmds.workspaceControl('MayaEditorWorkspaceControl', e=True,restore=True)
+    to re-show the workspace editor if needed. Will need to add this to a button at some stage
+'''
 
 
 maya_useNewAPI = True  # type: ignore
@@ -68,13 +98,13 @@ class MayaEditor(OpenMaya.MPxCommand):
         """
         Called when the command is executed in script
         """
-        try:
-            MayaEditor.ui.close()
-            MayaEditor.ui.deleteLater()
-        except:
-            pass
-        MayaEditor.ui = MayaEditorCore.EditorDialog()
-        MayaEditor.ui.showNormal()
+        ui = MayaEditorUIScript()
+        if ui is not None:
+            try :
+                cmds.workspaceControl('MayaEditorWorkspaceControl', e=True, restore=True)
+            except :
+                pass
+        return ui
 
     @classmethod
     def creator(cls):
@@ -120,6 +150,7 @@ def uninitializePlugin(plugin):
         OpenMaya.MGlobal.displayError(
             "Failed to deregister command: {0}".format(MayaEditor.CMD_NAME)
         )
+
 
 
 if __name__ == "__main__":

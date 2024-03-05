@@ -49,10 +49,10 @@ def get_main_window() -> Any:
     Returns : QWidget of the MayaMainWindow
     """
     window = omui.MQtUtil.mainWindow()
-    return wrapInstance(int(window), QWidget)
+    return wrapInstance(int(window), QDialog)
 
 
-class EditorDialog(QDialog):
+class EditorDialog(MayaQWidgetDockableMixin,QWidget):
     # class EditorDialog(QDialog):
     """Editor Dialog window main class.
 
@@ -73,10 +73,11 @@ class EditorDialog(QDialog):
         If we run standalone we need to pass in a main window instance (see the EditorStandalone.py module)
         """
         # do this here so we can run standalone or in maya
-        if parent is None:
-            parent = get_main_window()
+        # if parent is None:
+        #     parent = get_main_window()
+        super(EditorDialog, self).__init__(parent=parent)
 
-        super().__init__(parent)
+        #super().__init__(parent)
         self.setObjectName(self.__class__.editor_name)
         # Register the callback to filter the outputs to out output window
         self.callback_id = OpenMaya.MCommandMessage.addCommandOutputCallback(
@@ -680,12 +681,12 @@ class EditorDialog(QDialog):
             self.ui.sidebar_treeview.setHeaderHidden(True)
 
 
-class EditorDialogDockable(MayaQWidgetDockableMixin, EditorDialog):
-    def __init__(self, parent=None):
-
-        # do this here so we can run standalone or in maya
-        # if parent is None:
-        #     parent = get_main_window()
-        super().__init__(parent)
-
-        self.show(dockable=True)
+# class EditorDialogDockable(MayaQWidgetDockableMixin, EditorDialog):
+#     def __init__(self, parent=None):
+#
+#         # do this here so we can run standalone or in maya
+#         # if parent is None:
+#         #     parent = get_main_window()
+#         super().__init__(parent)
+#
+#         self.show(dockable=True)
