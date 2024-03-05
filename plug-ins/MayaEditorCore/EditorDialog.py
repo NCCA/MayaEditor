@@ -52,8 +52,10 @@ def get_main_window() -> Any:
     return wrapInstance(int(window), QDialog)
 
 
-class EditorDialog(MayaQWidgetDockableMixin,QWidget):
-    # class EditorDialog(QDialog):
+
+
+#class EditorDialog(MayaQWidgetDockableMixin,QWidget):
+class EditorDialogCore(QDialog):
     """Editor Dialog window main class.
 
     Inherits from QDialog and loads the ui from files.
@@ -75,7 +77,7 @@ class EditorDialog(MayaQWidgetDockableMixin,QWidget):
         # do this here so we can run standalone or in maya
         # if parent is None:
         #     parent = get_main_window()
-        super(EditorDialog, self).__init__(parent=parent)
+        super(EditorDialogCore, self).__init__(parent=parent)
 
         #super().__init__(parent)
         self.setObjectName(self.__class__.editor_name)
@@ -677,16 +679,13 @@ class EditorDialog(MayaQWidgetDockableMixin,QWidget):
         elif index == 2:  # Code Outline
             self.ui.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
             self.sidebar_models.generate_code_model()
-
             self.ui.sidebar_treeview.setHeaderHidden(True)
 
+class EditorDialog(MayaQWidgetDockableMixin,EditorDialogCore):
+    def __init__(self):
+        EditorDialogCore.__init__(self)
 
-# class EditorDialogDockable(MayaQWidgetDockableMixin, EditorDialog):
-#     def __init__(self, parent=None):
-#
-#         # do this here so we can run standalone or in maya
-#         # if parent is None:
-#         #     parent = get_main_window()
-#         super().__init__(parent)
-#
-#         self.show(dockable=True)
+class EditorDialogStandalone(EditorDialogCore):
+    def __init__(self) :
+        EditorDialogCore.__init__(self)
+

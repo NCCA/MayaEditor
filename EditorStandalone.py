@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         stdout.output_write.connect(self.write_output)
         stderr = OutputWrapper(self, False)
         stderr.output_write.connect(self.write_output)
-        self.editor = MayaEditorCore.EditorDialog(parent=self)
+        self.editor = MayaEditorCore.EditorDialogStandalone()
         self.is_saved = True
         self.filename = "untitled.ma"
         layout = QHBoxLayout()
