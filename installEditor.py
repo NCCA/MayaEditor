@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 maya_locations = {
-    "Linux": "/maya",
+    "Linux": "/maya/",
     "Darwin": "/Library/Preferences/Autodesk/maya",
     "Windows": "\\Documents\\maya\\",
 }
@@ -44,6 +44,7 @@ def check_maya_installed(op_sys):
 if __name__ == "__main__":
 
     try:
+        op_sys=platform.system()
         m_loc = check_maya_installed(op_sys)
     except:
         print("Error can't find maya install")
