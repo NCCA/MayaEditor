@@ -17,8 +17,6 @@
 This is the base class of all the editor text edits
 
 """
-import importlib.util
-from turtle import width
 from typing import Any, Callable, Optional, Type
 
 import maya.api.OpenMaya as OpenMaya

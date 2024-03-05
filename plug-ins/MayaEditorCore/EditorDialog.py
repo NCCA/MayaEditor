@@ -16,19 +16,14 @@
 
 This is the core Dialog class where all other elements are created and controlled. This can work stand alone as well as part of a plugin.
 """
-import os
-import socket
-import sys
 from pathlib import Path
-from tkinter.filedialog import FileDialog
 from typing import Any
 
 import maya.api.OpenMaya as OpenMaya
-import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
-from maya import utils
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtUiTools import *
@@ -37,10 +32,7 @@ from PySide2.QtWidgets import *
 # Note this is from Maya not pyside so type hints not generated
 from shiboken2 import wrapInstance  # type: ignore
 
-from .CustomUILoader import UiLoader
-from .EditorIcons import *
 from .EditorToolBar import EditorToolBar
-from .FindDialog import FindDialog
 from .MainUI import Ui_editor_dialog
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar
@@ -395,7 +387,7 @@ class EditorDialog(QDialog):
         tab = self.ui.editor_tab  # type: ignore
         tab.clear()
         self.workspace.new()
-        self.ui.sidebar_treeview.clear()
+        self.ui.sidebar_treeview.model().clear()
         self.create_live_editors()
 
     def save_workspace(self) -> None:

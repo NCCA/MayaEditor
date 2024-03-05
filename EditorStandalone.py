@@ -1,4 +1,4 @@
-#!mayapy
+#!/Applications/Autodesk/maya2024/Maya.app/Contents/bin/mayapy
 import os
 import sys
 from contextlib import redirect_stdout

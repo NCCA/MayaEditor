@@ -21,7 +21,7 @@ https://stackoverflow.com/questions/27603350/how-do-i-load-children-from-ui-file
 
 from typing import Optional
 
-from PySide2 import QtCore, QtGui, QtUiTools, QtWidgets
+from PySide2 import QtCore, QtUiTools, QtWidgets
 
 
 class UiLoader(QtUiTools.QUiLoader):

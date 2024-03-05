@@ -15,12 +15,10 @@
 
 """PythonTextEdit and related classes this Class extends the QPlainTextEdit."""
 import ast
-import importlib.util
 from collections import namedtuple
 from typing import Any, Callable, Optional, Type
 
 # import jedi
-import maya.api.OpenMaya as OpenMaya
 from maya import utils
 from PySide2.QtCore import *
 from PySide2.QtGui import *

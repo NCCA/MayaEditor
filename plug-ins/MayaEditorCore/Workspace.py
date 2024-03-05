@@ -20,7 +20,6 @@ The most important part of this is the self.files list where all the workspace p
 TODO :
     save some per workspace / per file data (which tab open, where in file, fonts etc.)
 """
-import enum
 import json
 from pathlib import Path
 from typing import List

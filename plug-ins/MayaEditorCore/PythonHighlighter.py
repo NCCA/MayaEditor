@@ -17,8 +17,6 @@
 This will be attached to the editor to do code syntax highlighting, modified from
 the Qt Editor example and other sources. 
 """
-import re
-import sys
 from typing import Any, Dict
 
 import maya.cmds as cmds

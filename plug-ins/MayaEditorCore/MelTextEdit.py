@@ -13,10 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """MelTextEdit and related classes this Class extends the QPlainTextEdit."""
-import importlib.util
 from collections import namedtuple
-from lib2to3.pgen2.pgen import generate_grammar
-from pydoc import doc
 from typing import Any, Callable, Optional, Type
 
 import maya.api.OpenMaya as OpenMaya
