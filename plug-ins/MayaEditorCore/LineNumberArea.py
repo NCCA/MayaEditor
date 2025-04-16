@@ -13,9 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import QWidget
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import QWidget
 
 
 # Based on the Qt Editor Demo
@@ -41,4 +41,3 @@ class LineNumberArea(QWidget):
     def paintEvent(self, event: QEvent) -> None:
         """Override the paint event to allow number drawing."""
         self.code_editor.lineNumberAreaPaintEvent(event)
-

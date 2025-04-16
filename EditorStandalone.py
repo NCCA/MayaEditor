@@ -9,10 +9,10 @@ import importlib.util
 import io
 
 import maya.standalone
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtUiTools import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtUiTools import *
+from qtpy.QtWidgets import *
 
 
 class OutputWrapper(QObject):
@@ -155,7 +155,18 @@ if __name__ == "__main__":
     # Maya is initialize else you just get stubs that don't work.
     import maya.cmds as cmds
     import maya.OpenMayaUI as omui
-    from shiboken2 import wrapInstance  # type: ignore
+
+    from qtpy import QtWidgets, API_NAME
+    # QtPy doesn't directly provide pointer wrapping for PyQt bindings
+    # so we check which API and import what we need. As this is for maya it will only ever be pyside2 or pyside6
+    if API_NAME.lower().startswith("pyside2"):
+        from shiboken2 import wrapInstance
+    elif API_NAME.lower().startswith("pyside6"):
+        from shiboken6 import wrapInstance
+    else:
+        raise RuntimeError("Pointer wrapping is not supported with PyQt bindings")
+
+
 
     # query the MayaEditor module file for location of source
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")

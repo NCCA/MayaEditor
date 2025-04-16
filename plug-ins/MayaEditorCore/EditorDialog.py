@@ -21,16 +21,24 @@ from typing import Any
 
 import maya.api.OpenMaya as OpenMaya
 import maya.cmds as cmds
-import maya.OpenMayaUI as omui
+import maya.OpenMayaUI as OpenMayaUI
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtUiTools import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtUiTools import *
+from qtpy.QtWidgets import *
 
-# Note this is from Maya not pyside so type hints not generated
-from shiboken2 import wrapInstance  # type: ignore
+from qtpy import QtWidgets, API_NAME
+# QtPy doesn't directly provide pointer wrapping for PyQt bindings
+# so we check which API and import what we need. As this is for maya it will only ever be pyside2 or pyside6
+if API_NAME.lower().startswith("pyside2"):
+    from shiboken2 import wrapInstance
+elif API_NAME.lower().startswith("pyside6"):
+    from shiboken6 import wrapInstance
+else:
+    raise RuntimeError("Pointer wrapping is not supported with PyQt bindings")
+
 
 from .EditorToolBar import EditorToolBar
 from .MainUI import Ui_editor_dialog
@@ -48,7 +56,7 @@ def get_main_window() -> Any:
     Grab the maya main window
     Returns : QWidget of the MayaMainWindow
     """
-    window = omui.MQtUtil.mainWindow()
+    window = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(int(window), QDialog)
 
 
@@ -119,33 +127,37 @@ class EditorDialogCore(QDialog):
         self.load_settings()
         self.create_live_editors()
         self.update_fonts.emit(self.font)
+        self.resize(1024,720)
         self.show()
 
     def load_settings(self) -> None:
-        """Load in the setting from QSettings for the editor."""
-        splitter_settings = self.settings.value("splitter")
-        self.ui.editor_splitter.restoreState(splitter_settings)  # type: ignore
+        try :
+            """Load in the setting from QSettings for the editor."""
+            splitter_settings = self.settings.value("splitter")
+            self.ui.editor_splitter.restoreState(splitter_settings)  # type: ignore
 
-        splitter_settings = self.settings.value("vertical_splitter")
-        self.ui.vertical_splitter.restoreState(splitter_settings)  # type: ignore
-        sz = self.settings.value(
-            "size",
-        )
-        self.resize(self.settings.value("size", QSize(1024, 720)))
-        workspace = self.settings.value("workspace")
-        try:
-            self.load_workspace_to_editor(workspace)
-        except:
-            pass
-        self.settings.beginGroup("Font")
-        name = self.settings.value("font-name", type=str)
-        size = self.settings.value("font-size", type=int)
-        weight = self.settings.value("font-weight", type=int)
-        italic = self.settings.value("font-italic", type=bool)
-        self.settings.endGroup()
+            splitter_settings = self.settings.value("vertical_splitter")
+            self.ui.vertical_splitter.restoreState(splitter_settings)  # type: ignore
+            sz = self.settings.value(
+                "size",
+            )
+            self.resize(self.settings.value("size", QSize(1024, 720)))
+            workspace = self.settings.value("workspace")
+            try:
+                self.load_workspace_to_editor(workspace)
+            except:
+                pass
+            self.settings.beginGroup("Font")
+            name = self.settings.value("font-name", type=str)
+            size = self.settings.value("font-size", type=int)
+            weight = self.settings.value("font-weight", type=int)
+            italic = self.settings.value("font-italic", type=bool)
+            self.settings.endGroup()
 
-        self.font = QFont(name, size, weight, italic)
-        self.update_fonts.emit(self.font)
+            self.font = QFont(name, size, weight, italic)
+            self.update_fonts.emit(self.font)
+        except Exception as e:
+            print(f"Error loading  settings: {e}")
 
     def save_settings(self) -> None:
         self.settings.setValue("splitter", self.ui.editor_splitter.saveState())  # type: ignore
@@ -281,7 +293,7 @@ class EditorDialogCore(QDialog):
         )
         show_output_window_action.setCheckable(True)
         show_output_window_action.setChecked(True)
-        show_output_window_action.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_1))
+        show_output_window_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_1))
 
         # show sidebar window
         show_sidebar_action = QAction("Show Sidebar", self)
@@ -292,7 +304,7 @@ class EditorDialogCore(QDialog):
         show_sidebar_action.setCheckable(True)
         show_sidebar_action.setChecked(True)
 
-        show_sidebar_action.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_0))
+        show_sidebar_action.setShortcut(QKeySequence(Qt.CTRL | Qt.Key_0))
 
         # Menu to main menu bar
         self.menu_bar.addMenu(settings_menu)
@@ -678,10 +690,11 @@ class EditorDialogCore(QDialog):
             self.ui.sidebar_treeview.setHeaderHidden(True)
 
 class EditorDialog(MayaQWidgetDockableMixin,EditorDialogCore):
-    def __init__(self):
-        EditorDialogCore.__init__(self)
+    def __init__(self,parent=None):
+        self._disableAutoParentingToMainWindow=None
+        #super(EditorDialog,self).__init__(parent=parent)
+        EditorDialogCore.__init__(self,parent)
 
 class EditorDialogStandalone(EditorDialogCore):
     def __init__(self) :
         EditorDialogCore.__init__(self)
-

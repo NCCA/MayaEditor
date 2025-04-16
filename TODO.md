@@ -7,6 +7,10 @@ This is my work in progress TODO list, more so I know what to do
 2. Refactor the Workspace / UI / Loading logic a bit more
 3. No test should really add some
 4. Add Makefile to run mypy and other tools for checking etc.
+5. Workspace needs work, save load is a bit glitchy
+6. sort out numbers at the side
+
+
 
 # Next
 

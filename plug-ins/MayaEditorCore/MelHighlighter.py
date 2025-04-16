@@ -15,15 +15,20 @@
 """Custom Highlighter for Python.
 
 This will be attached to the editor to do code syntax highlighting, modified from
-the Qt Editor example and other sources. 
+the Qt Editor example and other sources.
+"""
+"""Custom Highlighter for Python.
+
+This will be attached to the editor to do code syntax highlighting, modified from
+the Qt Editor example and other sources.
 """
 
 from typing import Any, Dict
 
 import maya.cmds as cmds
-from PySide2.QtCore import QRegExp, Qt
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import QRegularExpression, Qt
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 
 def _create_format(style_colour: str, style: str = "") -> QTextCharFormat:
@@ -33,7 +38,7 @@ def _create_format(style_colour: str, style: str = "") -> QTextCharFormat:
     new_format = QTextCharFormat()
     new_format.setForeground(QBrush(colour))
     if "bold" in style:
-        new_format.setFontWeight(QFont.Bold)  # type: ignore
+        new_format.setFontWeight(QFont.Bold)
     if "italic" in style:
         new_format.setFontItalic(True)
 
@@ -44,7 +49,7 @@ def _create_format_rgb(style_colour: QColor, style: str = "") -> QTextCharFormat
     new_format = QTextCharFormat()
     new_format.setForeground(QBrush(style_colour))
     if "bold" in style:
-        new_format.setFontWeight(QFont.Bold)  # type: ignore
+        new_format.setFontWeight(QFont.Bold)
     if "italic" in style:
         new_format.setFontItalic(True)
 
@@ -64,13 +69,13 @@ class MelHighlighter(QSyntaxHighlighter):
         "==","!=","<","<=","[^>]>",">=",
         # Arithmetic
         "\+","-","\*","/","//", "\%","\*\*",
-        # In-place 
+        # In-place
         "\+=","-=","\*=","/=","\%=",
         # Bitwise
         "\^", "\|","\&","\~","[^>]>>","<<"]
 
     # Python braces
-    braces = ["\{","\}","\(","\)","\[","\]"] 
+    braces = ["\{","\}","\(","\)","\[","\]"]
     # fmt: on
 
     mayaCmds = cmds.help("[a-z]*", list=True)
@@ -89,8 +94,8 @@ class MelHighlighter(QSyntaxHighlighter):
             "numbers": _create_format("GhostWhite"),
             "maya": _create_format("SpringGreen"),
         }
-        self.tri_single = (QRegExp("'''"), 1, self.styles["string2"])
-        self.tri_double = (QRegExp('"""'), 2, self.styles["string2"])
+        self.tri_single = (QRegularExpression("'''"), 1, self.styles["string2"])
+        self.tri_double = (QRegularExpression('"""'), 2, self.styles["string2"])
 
         rules = []
         # Keyword, operator, and brace rules
@@ -125,21 +130,18 @@ class MelHighlighter(QSyntaxHighlighter):
             ),
         ]
 
-        # Build a qt.QRegExp for each pattern
-        self.rules = [(QRegExp(pat), index, fmt) for (pat, index, fmt) in rules]
+        # Build a QRegularExpression for each pattern
+        self.rules = [(QRegularExpression(pat), index, fmt) for (pat, index, fmt) in rules]
 
     def highlightBlock(self, textBlock: str) -> None:
-        # Do other syntax syFormatting
+        # Do other syntax formatting
         for expr, nth, syFormat in self.rules:
-            index = expr.indexIn(textBlock, 0)
-
-            while index >= 0:
-                # We actually want the index of the nth match
-                index = expr.pos(nth)
-                length = len(expr.cap(nth))
-
+            match = expr.globalMatch(textBlock)
+            while match.hasNext():
+                m = match.next()
+                index = m.capturedStart(nth)
+                length = m.capturedLength(nth)
                 self.setFormat(index, length, syFormat)
-                index = expr.indexIn(textBlock, index + length)
 
         self.setCurrentBlockState(0)
 
@@ -148,9 +150,9 @@ class MelHighlighter(QSyntaxHighlighter):
         if not in_multiline:
             in_multiline = self.match_multiline(textBlock, *self.tri_double)
 
-    def match_multiline(self, textBlock: str, delimiter: QRegExp, in_state, style):
+    def match_multiline(self, textBlock: str, delimiter: QRegularExpression, in_state, style):
         """Do highlighting of multi-line strings. ``delimiter`` should be a
-        ``qt.QRegExp`` for triple-single-quotes or triple-double-quotes, and
+        ``QRegularExpression`` for triple-single-quotes or triple-double-quotes, and
         ``in_state`` should be a unique integer to represent the corresponding
         state changes when inside those strings. Returns True if we're still
         inside a multi-line string when this function is finished.
@@ -161,26 +163,29 @@ class MelHighlighter(QSyntaxHighlighter):
             add = 0
         # Otherwise, look for the delimiter on this line
         else:
-            start = delimiter.indexIn(textBlock)
+            match = delimiter.match(textBlock)
+            start = match.capturedStart()
             # Move past this match
-            add = delimiter.matchedLength()
+            add = match.capturedLength()
 
         # As long as there's a delimiter match on this line...
         while start >= 0:
             # Look for the ending delimiter
-            end = delimiter.indexIn(textBlock, start + add)
+            match = delimiter.match(textBlock, start + add)
+            end = match.capturedStart()
             # Ending delimiter on this line?
             if end >= add:
-                length = end - start + add + delimiter.matchedLength()
+                length = end - start + add + match.capturedLength()
                 self.setCurrentBlockState(0)
             # No; multi-line string
             else:
                 self.setCurrentBlockState(in_state)
                 length = len(textBlock) - start + add
-            # Apply syFormatting
+            # Apply formatting
             self.setFormat(start, length, style)
             # Look for the next match
-            start = delimiter.indexIn(textBlock, start + length)
+            match = delimiter.match(textBlock, start + length)
+            start = match.capturedStart()
 
         # Return True if still inside a multi-line string, False otherwise
         if self.currentBlockState() == in_state:

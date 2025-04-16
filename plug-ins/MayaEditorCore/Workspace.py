@@ -15,7 +15,7 @@
 """Workspace module for the NCCA Maya Editor.
 
 Contains all the code an functions for creating, reading and writing workspace data.
-The most important part of this is the self.files list where all the workspace project data will be saved. 
+The most important part of this is the self.files list where all the workspace project data will be saved.
 
 TODO :
     save some per workspace / per file data (which tab open, where in file, fonts etc.)
@@ -24,8 +24,8 @@ import json
 from pathlib import Path
 from typing import List
 
-from PySide2.QtCore import QDir
-from PySide2.QtWidgets import QInputDialog, QLineEdit, QMessageBox
+from qtpy.QtCore import QDir
+from qtpy.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 
 
 class Workspace:

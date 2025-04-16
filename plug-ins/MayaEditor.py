@@ -18,11 +18,24 @@ import sys
 import maya.api.OpenMaya as OpenMaya
 import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
-from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import QFile
-from PySide2.QtGui import QColor, QFont
-from PySide2.QtUiTools import QUiLoader
-from shiboken2 import wrapInstance  # type: ignore
+from qtpy import QtCore, QtWidgets
+from qtpy.QtCore import QFile
+from qtpy.QtGui import QColor, QFont
+from qtpy.QtUiTools import QUiLoader
+
+
+from qtpy import QtWidgets, API_NAME
+# QtPy doesn't directly provide pointer wrapping for PyQt bindings
+# so we check which API and import what we need. As this is for maya it will only ever be pyside2 or pyside6
+if API_NAME.lower().startswith("pyside2"):
+    from shiboken2 import wrapInstance
+elif API_NAME.lower().startswith("pyside6"):
+    from shiboken6 import wrapInstance
+else:
+    raise RuntimeError("Pointer wrapping is not supported with PyQt bindings")
+
+
+
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from builtins import int
 
@@ -76,7 +89,7 @@ def MayaEditorUIScript(restore=False):
 
 
 
-''' Using the workspaceControl Maya command to query/edit flags about the created 
+''' Using the workspaceControl Maya command to query/edit flags about the created
     we can use maya.cmds.workspaceControl('MayaEditorWorkspaceControl', e=True,restore=True)
     to re-show the workspace editor if needed. Will need to add this to a button at some stage
 '''

@@ -19,10 +19,10 @@ This file contains the class to produce the main toolbar and buttons for the edi
 from pathlib import Path
 from typing import Any, Optional
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtUiTools import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtUiTools import *
+from qtpy.QtWidgets import *
 
 
 class EditorToolBar(QToolBar):

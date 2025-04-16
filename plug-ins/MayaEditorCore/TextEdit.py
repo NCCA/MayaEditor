@@ -21,9 +21,9 @@ from typing import Any, Callable, Optional, Type
 
 import maya.api.OpenMaya as OpenMaya
 from maya import utils
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 from .FindDialog import FindDialog
 from .LineNumberArea import LineNumberArea

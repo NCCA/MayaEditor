@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 from .MelTextEdit import MelTextEdit
 from .PythonTextEdit import PythonTextEdit, class_model_data, code_model_data
