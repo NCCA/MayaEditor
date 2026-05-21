@@ -69,6 +69,18 @@ _ERROR_PREFIXES = ("E", "F")
 
 
 def _severity_for_code(code: str) -> str:
+    """Map a ruff rule code to ``\"error\"`` or ``\"warning\"``.
+
+    Parameters
+    ----------
+    code : str
+        The ruff rule code (e.g. ``\"E501\"``).
+
+    Returns
+    -------
+    str
+        ``\"error\"`` if the code starts with an error prefix, else ``\"warning\"``.
+    """
     for prefix in _ERROR_PREFIXES:
         if code.startswith(prefix):
             return "error"
@@ -90,6 +102,15 @@ class _RuffWorker(QObject):
     _ruff_missing_warned: bool = False
 
     def __init__(self, ruff_executable: str, parent: Optional[QObject] = None) -> None:
+        """Construct the worker.
+
+        Parameters
+        ----------
+        ruff_executable : str
+            Path to the ruff binary.
+        parent : QObject or None
+            Qt parent for lifetime management.
+        """
         super().__init__(parent)
         self._ruff_exe = ruff_executable
         self._pending_source: Optional[str] = None
@@ -199,6 +220,15 @@ class RuffLinter(QObject):
         ruff_executable: str = "",
         parent: Optional[QObject] = None,
     ) -> None:
+        """Construct the RuffLinter facade and start the background thread.
+
+        Parameters
+        ----------
+        ruff_executable : str
+            Path to the ruff binary. If empty, ``shutil.which`` is used.
+        parent : QObject or None
+            Qt parent for lifetime management.
+        """
         super().__init__(parent)
 
         self._thread = QThread(self)

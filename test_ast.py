@@ -1,10 +1,15 @@
 #!/usr/bin/env python
+"""Test script for AST-based class and function extraction."""
+
+from __future__ import annotations
+
 import ast
 import sys
 from collections import namedtuple
+from typing import Any, List
 
-code_model_data = namedtuple("CodeModel", "type line_number name")
-class_model_data = namedtuple("Class", "name line_number")
+code_model_data = namedtuple("code_model_data", "type line_number name")  # noqa: PYI024
+class_model_data = namedtuple("class_model_data", "name line_number")  # noqa: PYI024
 is_class = False
 
 
@@ -30,7 +35,7 @@ def extract_classes_and_functions(node_to_traverse, current_object):
 file = open(sys.argv[1], "r")
 f = file.read()
 node_to_traverse = ast.parse(f)
-class_and_functions = []
+class_and_functions: List[Any] = []
 
 
 extract_classes_and_functions(node_to_traverse, class_and_functions)

@@ -74,7 +74,9 @@ class FindDialog(QFrame):
         self.parent.find_next(self.text_search.text())
 
     def _replace_pressed(self) -> None:
+        """Replace the current match with the replacement text."""
         self.parent.replace_current(self.text_search.text(), self.replace.text())
 
     def _replace_all_pressed(self) -> None:
+        """Replace all occurrences of the search text with the replacement text."""
         self.parent.replace_all(self.text_search.text(), self.replace.text())

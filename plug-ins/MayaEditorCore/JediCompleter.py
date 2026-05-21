@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Custom Jedi autocomplete popup for MayaEditor."""
 
+from __future__ import annotations
+
 import sys
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QListWidget, QListWidgetItem
+from PySide6.QtGui import QKeyEvent
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QWidget
 
 try:
     from jedi import Interpreter, Project, Script  # type: ignore
@@ -21,7 +24,7 @@ except Exception:
 _jedi_project = None
 
 
-def _get_jedi_project():
+def _get_jedi_project() -> Optional[Project]:
     """Get or create a Jedi project configured with Maya's sys.path."""
     global _jedi_project
     if _jedi_project is None and _JEDI_AVAILABLE and Project is not None:
@@ -41,7 +44,7 @@ class JediCompletionPopup(QListWidget):
 
     completion_selected = Signal(str)  # Emitted when user selects a completion
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the completion popup.
 
         Parameters
@@ -95,7 +98,7 @@ class JediCompletionPopup(QListWidget):
         self.completion_selected.emit(text)
         self.hide()
 
-    def show_completions(self, editor, completions: List[str]) -> None:
+    def show_completions(self, editor: QWidget, completions: List[str]) -> None:
         """Show the completion popup with the given items.
 
         Parameters
@@ -132,7 +135,7 @@ class JediCompletionPopup(QListWidget):
         self.show()
         self.raise_()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle key events in the popup.
 
         Parameters
@@ -197,7 +200,7 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
         # This allows Jedi to see actual imported modules
         try:
             # Create a namespace and execute imports
-            namespace = {}
+            namespace: Dict[str, Any] = {}
 
             # Execute all lines before the current line to populate namespace
             lines_before = context_lines[: line - 1]

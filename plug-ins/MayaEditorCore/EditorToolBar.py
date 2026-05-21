@@ -97,7 +97,8 @@ class EditorToolBar(QToolBar):
         self.workspace_label.installEventFilter(self)
         self.addWidget(self.workspace_label)
 
-    def eventFilter(self, obj: object, event: object) -> bool:
+    def eventFilter(self, obj: object, event: QEvent) -> bool:
+        """Handle double-click on the workspace label to trigger rename."""
         if (
             obj is self.workspace_label
             and event.type() == QEvent.Type.MouseButtonDblClick
@@ -105,9 +106,16 @@ class EditorToolBar(QToolBar):
             if hasattr(self.parent, "rename_workspace"):
                 self.parent.rename_workspace()
             return True
-        return super().eventFilter(obj, event)
+        return bool(super().eventFilter(obj, event))
 
     def update_workspace_label(self, name: str) -> None:
+        """Update the workspace label text.
+
+        Parameters
+        ----------
+        name : str
+            The new workspace name.
+        """
         self.workspace_label.setText(name)
 
     def quick_load(self) -> None:

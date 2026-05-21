@@ -158,6 +158,7 @@ class EditorDialogCore(QDialog):
         self.update_window_title()
 
     def update_window_title(self) -> None:
+        """Set the window title to include the current workspace name."""
         name = self.workspace.workspace_name
         if name:
             self.setWindowTitle(f"NCCA Editor - {name}")

@@ -51,6 +51,7 @@ class LineNumberArea(QWidget):
         return QSize(self.code_editor.line_number_area_width(), 0)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Handle mouse clicks in the fold-icon margin to toggle code folds."""
         fold_start_x = self.code_editor.line_number_area_width() - FOLD_CLICK_MARGIN
         if event.button() == Qt.LeftButton and event.position().x() >= fold_start_x:
             block = self.code_editor.firstVisibleBlock()

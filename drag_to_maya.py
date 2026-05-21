@@ -1,8 +1,16 @@
+"""Drag-and-drop Maya module installer.
+
+This module is intended to be drag-dropped into Maya's viewport to install
+and load the MayaEditor module.
+"""
+
+from __future__ import annotations
+
 import importlib
 import sys
 import textwrap
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import maya.cmds as cmds
 
@@ -60,7 +68,7 @@ def install_module() -> None:
     print("  Module loaded.")
 
 
-def onMayaDroppedPythonFile(*args, **kwargs) -> None:  # noqa: N802
+def onMayaDroppedPythonFile(*args: Any, **kwargs: Any) -> None:  # noqa: N802
     """Entry point called automatically when this file is drag-dropped into Maya."""
     print("Installer dropped.")
 

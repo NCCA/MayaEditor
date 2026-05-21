@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional
 import maya.cmds as cmds
 from maya import utils
 from PySide6.QtCore import QEvent, QObject, QPoint, QStringListModel, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QKeyEvent, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import QCompleter, QFileDialog, QTextEdit, QToolTip
 
 from .JediCompleter import JediCompletionPopup, get_jedi_completions
@@ -236,8 +236,13 @@ class PythonTextEdit(TextEdit):
         except Exception:
             pass
 
-    def keyPressEvent(self, event) -> None:
-        # If popup is visible, let it handle navigation keys
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Handle key events with Jedi popup integration.
+
+        If the Jedi completion popup is visible, navigation keys are forwarded
+        to the popup. Otherwise the key is processed normally, and completions
+        are updated after alphanumeric or dot input.
+        """
         if self._jedi_popup.isVisible():
             if event.key() in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Return, Qt.Key_Enter, Qt.Key_Escape, Qt.Key_Tab):
                 self._jedi_popup.keyPressEvent(event)
@@ -409,6 +414,18 @@ class PythonTextEdit(TextEdit):
         self.lint_results_changed.emit(diagnostics)
 
     def _tooltip_at_cursor(self, cursor: QTextCursor) -> str:
+        """Build a tooltip string from lint diagnostics at the given cursor position.
+
+        Parameters
+        ----------
+        cursor : QTextCursor
+            The cursor position to check for diagnostics.
+
+        Returns
+        -------
+        str
+            Newline-separated diagnostic messages, or empty string if none.
+        """
         pos = cursor.position()
         messages = []
         for sel in self.extraSelections():

@@ -283,6 +283,7 @@ class TextEdit(QPlainTextEdit):
         return True
 
     def _update_tab_title(self) -> None:
+        """Update the tab text to reflect the current filename."""
         if not self.filename:
             return
         p = QObject.parent(self)
@@ -457,12 +458,29 @@ class TextEdit(QPlainTextEdit):
         self.setExtraSelections(extraSelections)
 
     def _indent_level(self, block: "QTextBlock") -> int:
+        """Return the indentation level (in characters) of the given block.
+
+        Parameters
+        ----------
+        block : QTextBlock
+            The text block to check.
+
+        Returns
+        -------
+        int
+            Number of leading whitespace characters, or -1 if the block is blank.
+        """
         text = block.text()
         if not text.strip():
             return -1
         return len(text) - len(text.lstrip())
 
     def _is_fold_start(self, block: "QTextBlock") -> bool:
+        """Check whether the block is a foldable region start.
+
+        A block is a fold start if it has at least one non-blank child at a
+        deeper indentation level.
+        """
         text = block.text().strip()
         if not text or text.startswith("#") or text.startswith("//"):
             return False
@@ -477,6 +495,18 @@ class TextEdit(QPlainTextEdit):
     def _fold_region(
         self, block: "QTextBlock"
     ) -> Optional[Tuple["QTextBlock", "QTextBlock"]]:
+        """Return the (first, last) child block pair for a foldable block.
+
+        Parameters
+        ----------
+        block : QTextBlock
+            The potential fold-start block.
+
+        Returns
+        -------
+        tuple of (QTextBlock, QTextBlock) or None
+            The first and last child blocks, or None if not foldable.
+        """
         if not self._is_fold_start(block):
             return None
         level = self._indent_level(block)
@@ -498,6 +528,13 @@ class TextEdit(QPlainTextEdit):
 
     @Slot(int)
     def toggle_fold(self, line_number: int) -> None:
+        """Toggle the folded state of the code region at *line_number*.
+
+        Parameters
+        ----------
+        line_number : int
+            0-based block number in the document.
+        """
         block = self.document().findBlockByNumber(line_number)
         region = self._fold_region(block)
         if region is None:
@@ -529,6 +566,7 @@ class TextEdit(QPlainTextEdit):
         )
 
     def _clear_folds(self) -> None:
+        """Reset all fold states and make all blocks visible."""
         if not self._fold_states:
             return
         self._fold_states.clear()
@@ -593,6 +631,13 @@ class TextEdit(QPlainTextEdit):
             self.found_index = 1
 
     def _find_flags(self) -> QTextDocument.FindFlag:
+        """Build QTextDocument find flags from the find-dialog UI state.
+
+        Returns
+        -------
+        QTextDocument.FindFlag
+            Combined find flags (case sensitivity, whole word).
+        """
         flags = QTextDocument.FindFlag(0)
         if self.find_dialog and self.find_dialog.case_sensitive.isChecked():
             flags |= QTextDocument.FindCaseSensitively
