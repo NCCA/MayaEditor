@@ -66,7 +66,7 @@ class LineNumberArea(QWidget):
             while block.isValid():
                 if top <= click_y <= bottom:
                     if block.isVisible():
-                        self.code_editor.toggle_fold(block_number)
+                        self.code_editor.folding.toggle_fold(block_number)
                     return
                 block = block.next()
                 top = bottom

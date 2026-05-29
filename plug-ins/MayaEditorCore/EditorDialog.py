@@ -64,6 +64,7 @@ from .MainUI import Ui_editor_dialog
 from .MelTextEdit import MelTextEdit
 from .OutputToolBar import OutputToolBar
 from .PythonTextEdit import PythonTextEdit
+from .SettingsManager import SettingsManager
 from .SidebarModels import SideBarModels
 from .TextEdit import TextEdit
 from .Workspace import Workspace
@@ -119,8 +120,7 @@ class EditorDialogCore(QDialog):
         self.callback_id: int = OpenMaya.MCommandMessage.addCommandOutputCallback(
             self.message_callback, ""
         )
-        self.settings = QSettings("NCCA", "NCCA_Maya_Editor")
-        self._ruff_executable: str = ""  # overwritten by load_settings
+        self.settings_manager = SettingsManager(self, QSettings("NCCA", "NCCA_Maya_Editor"))
         self.file_system_root: str = QDir.currentPath()
         self.root_path: str = cmds.moduleInfo(path=True, moduleName="MayaEditor")
         self.python_icon = QIcon(":/icons/python.png")
@@ -158,6 +158,11 @@ class EditorDialogCore(QDialog):
         self.update_fonts.emit(self.font)
         self.update_window_title()
 
+    @property
+    def settings(self) -> QSettings:
+        """Expose the underlying QSettings for backward-compatible access."""
+        return self.settings_manager._settings
+
     def update_window_title(self) -> None:
         """Set the window title to include the current workspace name."""
         name = self.workspace.workspace_name
@@ -169,90 +174,16 @@ class EditorDialogCore(QDialog):
             self.tool_bar.update_workspace_label(name)
 
     def load_settings(self) -> None:
-        """Load editor settings from QSettings.
-
-        Each section is wrapped individually so a corrupt or missing value never
-        prevents the editor from opening. PySide6 (Maya 2026+) broke the
-        PySide2-style ``type=`` kwarg on QSettings.value() and also raises with
-        complex default values, so all casting is done manually.
-        """
-        try:
-            self.ui.editor_splitter.restoreState(self.settings.value("splitter"))
-        except Exception:
-            pass
-        try:
-            self.ui.vertical_splitter.restoreState(
-                self.settings.value("vertical_splitter")
-            )
-        except Exception:
-            pass
-        try:
-            size = self.settings.value("size")
-            if size is not None:
-                self.resize(size)
-            else:
-                self.resize(QSize(1024, 720))
-        except Exception:
-            self.resize(QSize(1024, 720))
-        # Load ruff executable BEFORE loading workspace files so that any
-        # editors created during workspace restore already have the correct path.
-        try:
-            ruff_exe = self.settings.value("ruff_executable")
-            self._ruff_executable = str(ruff_exe) if ruff_exe else ""
-        except Exception:
-            self._ruff_executable = ""
-
-        try:
-            workspace = self.settings.value("workspace")
-            if workspace:
-                self.load_workspace_to_editor(workspace)
-        except Exception:
-            pass
-        try:
-            root = self.settings.value("file_system_root")
-            if root:
-                self.file_system_root = str(root)
-        except Exception:
-            pass
-
-        self.settings.beginGroup("Font")
-        try:
-            name = str(self.settings.value("font-name") or "Courier New")
-            size = int(self.settings.value("font-size") or 12)
-            weight = int(self.settings.value("font-weight") or 50)
-            _italic = self.settings.value("font-italic")
-            italic = _italic in (True, "true", "True", "1", 1)
-        except Exception:
-            name, size, weight, italic = "Courier New", 12, 50, False
-        self.settings.endGroup()
-
-        self.font = QFont(name, size, weight, italic)
-        self.update_fonts.emit(self.font)
+        """Load editor settings — delegates to :class:`SettingsManager`."""
+        self.settings_manager.load()
 
     def save_settings(self) -> None:
-        """Save current editor settings to QSettings."""
-        self.settings.setValue("splitter", self.ui.editor_splitter.saveState())
-        self.settings.setValue(
-            "vertical_splitter", self.ui.vertical_splitter.saveState()
-        )
-        self.settings.setValue("size", self.size())
-        self.settings.setValue("workspace", self.workspace.file_name)
-        self.settings.setValue("file_system_root", self.file_system_root)
-        if hasattr(self, "_ruff_executable"):
-            self.settings.setValue("ruff_executable", self._ruff_executable)
-        self.settings.beginGroup("Font")
-        self.settings.setValue("font-name", self.font.family())
-        self.settings.setValue("font-size", self.font.pointSize())
-        self.settings.setValue("font-weight", self.font.weight())
-        self.settings.setValue("font-italic", self.font.italic())
-        self.settings.endGroup()
+        """Save current editor settings — delegates to :class:`SettingsManager`."""
+        self.settings_manager.save()
 
     def change_font(self) -> None:
-        """Show a font dialog and apply the selected font to all editors."""
-        ok, font = QFontDialog.getFont(self)
-        if ok:
-            self.font = font
-            self.update_fonts.emit(self.font)
+        """Show a font dialog and apply the selected font — delegates to :class:`SettingsManager`."""
+        self.settings_manager.change_font()
 
     def debug(self, message: str) -> None:
         """Append a debug message to the output window.
@@ -430,30 +361,8 @@ class EditorDialogCore(QDialog):
                 self.workspace.is_saved = False
 
     def set_ruff_executable(self) -> None:
-        """Open a file dialog to set a custom path for the ruff executable.
-
-        The chosen path is persisted in QSettings under the key
-        ``"ruff_executable"`` and applied to every Python editor tab that is
-        currently open as well as any subsequently created tab.
-        """
-        current = str(self.settings.value("ruff_executable") or "")
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select ruff Executable",
-            current or "/usr/local/bin",
-            "Executable (*)",
-        )
-        if path:
-            self.settings.setValue("ruff_executable", path)
-            self._ruff_executable = path
-            # Update every open Python editor via thread-safe signal and
-            # immediately re-run the linter so the user sees results right away.
-            tab = self.ui.editor_tab
-            for i in range(tab.count()):
-                editor = tab.widget(i)
-                if isinstance(editor, PythonTextEdit):
-                    editor._linter.set_executable(path)
-                    editor._run_linter()
+        """Set the ruff executable path — delegates to :class:`SettingsManager`."""
+        self.settings_manager.set_ruff_executable()
 
     def open_file(self) -> None:
         """Show a file-open dialog and load the selected file into a new tab."""
@@ -477,8 +386,8 @@ class EditorDialogCore(QDialog):
             live=False,
             parent=self,
         )
-        if hasattr(self, "_ruff_executable") and self._ruff_executable:
-            editor._linter.set_executable(self._ruff_executable)
+        if self.settings_manager._ruff_executable:
+            editor._linter.set_executable(self.settings_manager._ruff_executable)
         self.connect_editor_slots(editor)
         self.ui.editor_tab.insertTab(0, editor, "untitled.py")
         self.ui.editor_tab.setCurrentIndex(0)
@@ -667,8 +576,8 @@ class EditorDialogCore(QDialog):
                 icon = self.text_icon
                 editor.set_editor_fonts(self.font)
 
-            if path.suffix == ".py" and hasattr(self, "_ruff_executable") and self._ruff_executable:
-                editor._linter.set_executable(self._ruff_executable)
+            if path.suffix == ".py" and self.settings_manager._ruff_executable:
+                editor._linter.set_executable(self.settings_manager._ruff_executable)
 
             if path.suffix in (".mel", ".py"):
                 self.tool_bar.add_to_active_file_list(short_name)
@@ -780,8 +689,8 @@ class EditorDialogCore(QDialog):
             read_only=False,
             parent=self.ui.editor_tab,
         )
-        if hasattr(self, "_ruff_executable") and self._ruff_executable:
-            editor._linter.set_executable(self._ruff_executable)
+        if self.settings_manager._ruff_executable:
+            editor._linter.set_executable(self.settings_manager._ruff_executable)
         self.connect_editor_slots(editor)
         self.ui.editor_tab.insertTab(0, editor, self.python_icon, "Python live_window")
         self.ui.editor_tab.setCurrentIndex(0)
