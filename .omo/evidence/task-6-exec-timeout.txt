@@ -1,0 +1,1 @@
+PASS: exec() wrapped with timeout

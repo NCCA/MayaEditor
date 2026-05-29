@@ -1,0 +1,1 @@
+PASS: restore() method exists

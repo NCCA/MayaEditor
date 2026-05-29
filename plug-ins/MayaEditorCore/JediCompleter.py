@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import sys
+import signal
+import threading
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QListWidget, QListWidgetItem, QWidget
+from PySide6.QtCore import Qt, Signal  # type: ignore[import-not-found]
+from PySide6.QtGui import QKeyEvent  # type: ignore[import-not-found]
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QWidget  # type: ignore[import-not-found]
 
 try:
     from jedi import Interpreter, Project, Script  # type: ignore
@@ -22,9 +24,10 @@ except Exception:
 
 # Cache the Jedi project to avoid recreating it every time
 _jedi_project = None
+_EXEC_TIMEOUT_SECONDS = 2
 
 
-def _get_jedi_project() -> Optional[Project]:
+def _get_jedi_project() -> Optional[Any]:
     """Get or create a Jedi project configured with Maya's sys.path."""
     global _jedi_project
     if _jedi_project is None and _JEDI_AVAILABLE and Project is not None:
@@ -33,6 +36,61 @@ def _get_jedi_project() -> Optional[Project]:
         _jedi_project = Project(path=".", added_sys_path=sys.path)
 
     return _jedi_project
+
+
+def _exec_code_with_timeout(code: str, namespace: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute code with a short timeout guard.
+
+    Uses SIGALRM when available and safe, otherwise falls back to a watchdog
+    thread so completion lookup never blocks indefinitely.
+    """
+    if not code.strip():
+        return namespace
+
+    can_use_signal = (
+        sys.platform != "darwin"
+        and threading.current_thread() is threading.main_thread()
+        and hasattr(signal, "SIGALRM")
+    )
+
+    if can_use_signal:
+        def _handle_timeout(signum, frame) -> None:  # type: ignore[no-untyped-def]
+            raise TimeoutError("exec timed out")
+
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        try:
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(_EXEC_TIMEOUT_SECONDS)
+            exec(code, namespace)
+            return namespace
+        except TimeoutError:
+            return {}
+        except Exception:
+            return {}
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, previous_handler)
+
+    finished = threading.Event()
+    result: Dict[str, Any] = {}
+
+    def _runner() -> None:
+        try:
+            exec(code, namespace)
+            result.update(namespace)
+        except Exception:
+            result.clear()
+        finally:
+            finished.set()
+
+    worker = threading.Thread(target=_runner, daemon=True)
+    worker.start()
+    worker.join(_EXEC_TIMEOUT_SECONDS)
+
+    if not finished.is_set():
+        return {}
+
+    return result or namespace
 
 
 class JediCompletionPopup(QListWidget):
@@ -196,6 +254,8 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
         else:
             current_line = ""
 
+        combined_namespace: Dict[str, Any] = {}
+
         # Execute the code up to the cursor to get real runtime context
         # This allows Jedi to see actual imported modules
         try:
@@ -207,11 +267,7 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
             code_before = "\n".join(lines_before)
 
             if code_before.strip():
-                try:
-                    exec(code_before, namespace)
-                except Exception:
-                    # Silently fail - user code may have errors
-                    namespace = {}
+                namespace = _exec_code_with_timeout(code_before, namespace)
 
             # Add Maya's main namespace as well
             import __main__
@@ -219,10 +275,12 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
             combined_namespace = {**__main__.__dict__, **namespace}
 
             # Use Interpreter mode with executed namespace
+            assert Interpreter is not None
             interpreter = Interpreter(source, namespaces=[combined_namespace], project=project)
             completions = interpreter.complete(line, col)
         except Exception:
             # Fallback to Script mode
+            assert Script is not None
             script = Script(source, path=filename, project=project)
             completions = script.complete(line, col)
 

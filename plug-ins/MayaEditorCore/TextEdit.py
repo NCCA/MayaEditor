@@ -19,7 +19,7 @@ find/replace, zoom, and common signal wiring.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Tuple
+from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QObject, QRect, Qt, Signal, Slot
 from PySide6.QtGui import (
@@ -42,11 +42,9 @@ from PySide6.QtWidgets import (
     QTextEdit,
 )
 
+from .CodeFoldingManager import CodeFoldingManager
 from .FindDialog import FindDialog
 from .LineNumberArea import LineNumberArea
-
-if TYPE_CHECKING:
-    from PySide6.QtGui import QTextBlock
 
 FOLD_ICON_WIDTH = 14
 
@@ -67,6 +65,7 @@ class TextEdit(QPlainTextEdit):
     update_output = Signal(str)
     update_output_html = Signal(str)
     draw_line = Signal()
+    add_file_to_workspace = Signal(str)
 
     def __init__(
         self,
@@ -116,7 +115,7 @@ class TextEdit(QPlainTextEdit):
             self.cursorPositionChanged.connect(self.highlight_current_line)
         self.needs_saving: bool = False
         self.first_edit: bool = False
-        self._fold_states: dict[int, bool] = {}
+        self.folding = CodeFoldingManager(self)
         self.textChanged.connect(self.text_changed)
 
     def text_changed(self) -> None:
@@ -129,7 +128,7 @@ class TextEdit(QPlainTextEdit):
             self.first_edit = True
         else:
             self.needs_saving = True
-        self._clear_folds()
+        self.folding.clear_folds()
 
     @Slot(QFont)
     def set_editor_fonts(self, font: QFont) -> None:
@@ -273,8 +272,7 @@ class TextEdit(QPlainTextEdit):
                 return False
             else:
                 self.filename = filename
-                if self.parent and hasattr(self.parent, "workspace"):
-                    self.parent.workspace.add_file(filename)
+                self.add_file_to_workspace.emit(filename)
         if self.filename:
             with open(self.filename, "w") as code_file:
                 code_file.write(self.toPlainText())
@@ -301,7 +299,7 @@ class TextEdit(QPlainTextEdit):
             if self.find_dialog.isVisible():
                 self.find_dialog.hide()
             else:
-                geometry = self.parent.geometry() if self.parent else QRect()
+                geometry = QObject.parent(self).geometry() if QObject.parent(self) else QRect()
                 self.find_dialog.move(
                     geometry.width() - self.find_dialog.width() - 10,
                     geometry.top(),
@@ -416,8 +414,8 @@ class TextEdit(QPlainTextEdit):
             number_area_width = self.line_number_area.width() - FOLD_ICON_WIDTH
             while block.isValid() and (top <= event.rect().bottom()):
                 if block.isVisible() and (bottom >= event.rect().top()):
-                    if self._is_fold_start(block):
-                        is_folded = self._fold_states.get(blockNumber, False)
+                    if self.folding.is_fold_start(block):
+                        is_folded = self.folding.fold_states.get(blockNumber, False)
                         icon_size = 10
                         icon_x = number_area_width + (FOLD_ICON_WIDTH - icon_size) // 2
                         icon_y = top + (height - icon_size) // 2
@@ -456,129 +454,6 @@ class TextEdit(QPlainTextEdit):
             selection.cursor.clearSelection()
             extraSelections.append(selection)
         self.setExtraSelections(extraSelections)
-
-    def _indent_level(self, block: "QTextBlock") -> int:
-        """Return the indentation level (in characters) of the given block.
-
-        Parameters
-        ----------
-        block : QTextBlock
-            The text block to check.
-
-        Returns
-        -------
-        int
-            Number of leading whitespace characters, or -1 if the block is blank.
-        """
-        text = block.text()
-        if not text.strip():
-            return -1
-        return len(text) - len(text.lstrip())
-
-    def _is_fold_start(self, block: "QTextBlock") -> bool:
-        """Check whether the block is a foldable region start.
-
-        A block is a fold start if it has at least one non-blank child at a
-        deeper indentation level.
-        """
-        text = block.text().strip()
-        if not text or text.startswith("#") or text.startswith("//"):
-            return False
-        level = self._indent_level(block)
-        child = block.next()
-        while child.isValid():
-            if child.text().strip():
-                return self._indent_level(child) > level
-            child = child.next()
-        return False
-
-    def _fold_region(
-        self, block: "QTextBlock"
-    ) -> Optional[Tuple["QTextBlock", "QTextBlock"]]:
-        """Return the (first, last) child block pair for a foldable block.
-
-        Parameters
-        ----------
-        block : QTextBlock
-            The potential fold-start block.
-
-        Returns
-        -------
-        tuple of (QTextBlock, QTextBlock) or None
-            The first and last child blocks, or None if not foldable.
-        """
-        if not self._is_fold_start(block):
-            return None
-        level = self._indent_level(block)
-        first = None
-        last = None
-        child = block.next()
-        while child.isValid():
-            if child.text().strip():
-                child_level = self._indent_level(child)
-                if child_level <= level:
-                    break
-                if first is None:
-                    first = child
-                last = child
-            child = child.next()
-        if first is not None:
-            return (first, last)
-        return None
-
-    @Slot(int)
-    def toggle_fold(self, line_number: int) -> None:
-        """Toggle the folded state of the code region at *line_number*.
-
-        Parameters
-        ----------
-        line_number : int
-            0-based block number in the document.
-        """
-        block = self.document().findBlockByNumber(line_number)
-        region = self._fold_region(block)
-        if region is None:
-            return
-
-        first, last = region
-        is_folded = self._fold_states.get(line_number, False)
-
-        if is_folded:
-            self._fold_states[line_number] = False
-            child = first
-            while True:
-                child.setVisible(True)
-                if child == last:
-                    break
-                child = child.next()
-        else:
-            self._fold_states[line_number] = True
-            child = first
-            while True:
-                child.setVisible(False)
-                if child == last:
-                    break
-                child = child.next()
-
-        self.document().markContentsDirty(0, self.document().blockCount())
-        self.update_line_number_area(
-            QRect(0, 0, self.line_number_area_width(), self.height()), 0
-        )
-
-    def _clear_folds(self) -> None:
-        """Reset all fold states and make all blocks visible."""
-        if not self._fold_states:
-            return
-        self._fold_states.clear()
-        block = self.document().begin()
-        while block.isValid():
-            if not block.isVisible():
-                block.setVisible(True)
-            block = block.next()
-        self.document().markContentsDirty(0, self.document().blockCount())
-        self.update_line_number_area(
-            QRect(0, 0, self.line_number_area_width(), self.height()), 0
-        )
 
     @Slot(bool)
     def toggle_line_number(self, state: bool) -> None:

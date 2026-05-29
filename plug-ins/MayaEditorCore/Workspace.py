@@ -150,6 +150,8 @@ class Workspace:
             if ret == QMessageBox.Save:
                 self.save(self.file_name)
                 return True
+            elif ret == QMessageBox.Discard:
+                return True
             else:
                 return False
         return True

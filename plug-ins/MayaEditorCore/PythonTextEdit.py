@@ -204,6 +204,13 @@ class PythonTextEdit(TextEdit):
         except Exception:
             pass
 
+    @Slot(bool)
+    def setAutoCompletion(self, enabled: bool) -> None:
+        """Enable or disable the Jedi completion popup."""
+        self._popup_enabled = enabled
+        if not enabled:
+            self._jedi_popup.hide()
+
     def _insert_completion(self, text: str) -> None:
         """Insert a selected completion into the editor, replacing the current word."""
         try:
@@ -315,8 +322,7 @@ class PythonTextEdit(TextEdit):
             if not filename:
                 return False
             self.filename = filename
-            if self.parent and hasattr(self.parent, "workspace"):
-                self.parent.workspace.add_file(filename)
+            self.add_file_to_workspace.emit(filename)
         if self.filename:
             with open(self.filename, "w") as code_file:
                 code_file.write(self.toPlainText())
