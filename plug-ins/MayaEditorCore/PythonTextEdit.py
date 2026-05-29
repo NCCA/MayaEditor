@@ -204,6 +204,13 @@ class PythonTextEdit(TextEdit):
         except Exception:
             pass
 
+    @Slot(bool)
+    def setAutoCompletion(self, enabled: bool) -> None:
+        """Enable or disable the Jedi completion popup."""
+        self._popup_enabled = enabled
+        if not enabled:
+            self._jedi_popup.hide()
+
     def _insert_completion(self, text: str) -> None:
         """Insert a selected completion into the editor, replacing the current word."""
         try:

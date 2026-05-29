@@ -2,11 +2,11 @@
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QToolButton
+from PySide6.QtGui import QIcon  # type: ignore
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QToolButton  # type: ignore
 
 if TYPE_CHECKING:
-    from .TextEdit import TextEdit
+    from .TextEdit import TextEdit  # type: ignore
 
 
 class FindDialog(QFrame):
@@ -37,18 +37,33 @@ class FindDialog(QFrame):
 
         self.case_sensitive = QToolButton()
         self.case_sensitive.setCheckable(True)
-        self.case_sensitive.setIcon(QIcon(":/icons/caseSensitive.png"))
+        case_sensitive_icon = QIcon(":/icons/caseSensitive.png")
+        if case_sensitive_icon.isNull():
+            case_sensitive_icon = QIcon.fromTheme("format-text-bold")
+        self.case_sensitive.setIcon(case_sensitive_icon)
+        if case_sensitive_icon.isNull():
+            self.case_sensitive.setText("Aa")
         self.case_sensitive.setToolTip("match case")
         self.layout.addWidget(self.case_sensitive, 0, 4)
 
         self.whole_word = QToolButton()
         self.whole_word.setCheckable(True)
-        self.whole_word.setIcon(QIcon(":/icons/wholeWord.png"))
+        whole_word_icon = QIcon(":/icons/wholeWord.png")
+        if whole_word_icon.isNull():
+            whole_word_icon = QIcon.fromTheme("edit-select-all")
+        self.whole_word.setIcon(whole_word_icon)
+        if whole_word_icon.isNull():
+            self.whole_word.setText("W")
         self.whole_word.setToolTip("match whole word")
         self.layout.addWidget(self.whole_word, 0, 5)
 
         self.hide_button = QToolButton()
-        self.hide_button.setIcon(QIcon(":/icons/closeFind.png"))
+        close_find_icon = QIcon(":/icons/closeFind.png")
+        if close_find_icon.isNull():
+            close_find_icon = QIcon.fromTheme("window-close")
+        self.hide_button.setIcon(close_find_icon)
+        if close_find_icon.isNull():
+            self.hide_button.setText("×")
         self.hide_button.setToolTip("hide")
         self.hide_button.clicked.connect(self.hide)
         self.layout.addWidget(self.hide_button, 0, 8)

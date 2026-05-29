@@ -1,0 +1,1 @@
+PASS: icon null-checks added

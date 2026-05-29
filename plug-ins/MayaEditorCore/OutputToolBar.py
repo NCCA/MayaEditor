@@ -17,7 +17,7 @@
 from typing import Any, Optional
 
 import maya.cmds as cmds
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
 
 class OutputToolBar(QToolBar):
     """Toolbar for the output window with clear, copy, save, and help controls."""
+
+    autocomplete_toggled = Signal(bool)
 
     def __init__(self, parent: Optional[Any] = None) -> None:
         """Construct the output toolbar.
@@ -124,33 +126,7 @@ class OutputToolBar(QToolBar):
         state : bool
             True to show popup, False to hide.
         """
-        # Find all PythonTextEdit instances by checking for _popup_enabled
-        from .PythonTextEdit import PythonTextEdit
-
-        editors = []
-
-        # Recursively find all PythonTextEdit widgets
-        def find_python_editors(widget):
-            if isinstance(widget, PythonTextEdit):
-                editors.append(widget)
-            # Check children
-            if hasattr(widget, "children"):
-                for child in widget.children():
-                    find_python_editors(child)
-
-        if self.parent:
-            find_python_editors(self.parent)
-
-        # Toggle all editors
-        print(f"[Toggle] Found {len(editors)} PythonTextEdit instances, setting popup to {state}")
-        for editor in editors:
-            if hasattr(editor, "_popup_enabled"):
-                editor._popup_enabled = state
-                print(f"[Toggle] Set editor._popup_enabled = {state}")
-            # Hide popup immediately if disabling
-            if not state and hasattr(editor, "_jedi_popup"):
-                editor._jedi_popup.hide()
-                print("[Toggle] Hid popup")
+        self.autocomplete_toggled.emit(state)
 
     @Slot(int)
     def update_output_level(self, index: int) -> None:

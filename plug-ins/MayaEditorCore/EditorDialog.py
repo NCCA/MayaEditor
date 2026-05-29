@@ -138,6 +138,7 @@ class EditorDialogCore(QDialog):
         self.sidebar_models = SideBarModels(self)
         self.ui.sidebar_treeview.setModel(self.sidebar_models.active_model)
         self.ui.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
+        self._autocomplete_enabled = True
 
         self.ui.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
         self.ui.editor_tab.currentChanged.connect(
@@ -503,6 +504,7 @@ class EditorDialogCore(QDialog):
         self.tool_bar = EditorToolBar(self)
         self.ui.dock_widget.setWidget(self.tool_bar)
         self.output_tool_bar = OutputToolBar(self)
+        self.output_tool_bar.autocomplete_toggled.connect(self._on_autocomplete_toggled)
         self.ui.output_dock.setWidget(self.output_tool_bar)
 
     def tab_close_requested(self, index: int) -> None:
@@ -960,9 +962,21 @@ class EditorDialogCore(QDialog):
         editor.draw_line.connect(self.output_window.append_line)
         self.update_fonts.connect(editor.set_editor_fonts)
         self.toggle_line_numbers.connect(editor.toggle_line_number)
+        if isinstance(editor, PythonTextEdit):
+            editor.setAutoCompletion(self._autocomplete_enabled)
         # Wire lint results to the lint panel for Python editors
         if isinstance(editor, PythonTextEdit):
             editor.lint_results_changed.connect(self._on_editor_lint_results)
+
+    @Slot(bool)
+    def _on_autocomplete_toggled(self, checked: bool) -> None:
+        """Apply the autocomplete state to all open Python editors."""
+        self._autocomplete_enabled = checked
+        tab = self.ui.editor_tab
+        for index in range(tab.count()):
+            editor = tab.widget(index)
+            if isinstance(editor, PythonTextEdit):
+                editor.setAutoCompletion(checked)
 
     @Slot(int)
     def _on_active_tab_changed(self, _index: int) -> None:

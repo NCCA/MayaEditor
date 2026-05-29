@@ -67,6 +67,13 @@ class OutputWrapper(QObject):
         if hasattr(self._stream, "flush"):
             self._stream.flush()
 
+    def restore(self) -> None:
+        """Restore the original stdout/stderr stream."""
+        if self._stdout:
+            sys.stdout = self._stream
+        else:
+            sys.stderr = self._stream
+
 
 class MainWindow(QMainWindow):
     """Main window for the standalone Maya editor."""
@@ -80,10 +87,10 @@ class MainWindow(QMainWindow):
             Parent widget.
         """
         super().__init__()
-        stdout = OutputWrapper(self, True)
-        stdout.output_write.connect(self.write_output)
-        stderr = OutputWrapper(self, False)
-        stderr.output_write.connect(self.write_output)
+        self._stdout_wrapper = OutputWrapper(self, True)
+        self._stdout_wrapper.output_write.connect(self.write_output)
+        self._stderr_wrapper = OutputWrapper(self, False)
+        self._stderr_wrapper.output_write.connect(self.write_output)
 
         self.editor = MayaEditorCore.EditorDialogStandalone()
         self.is_saved: bool = True
@@ -248,3 +255,6 @@ if __name__ == "__main__":
         maya.standalone.uninitialize()
     except Exception:
         traceback.print_exc()
+    finally:
+        window._stdout_wrapper.restore()
+        window._stderr_wrapper.restore()
