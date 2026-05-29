@@ -46,6 +46,12 @@ except ImportError:
     OpenMaya.MGlobal.displayError("Trouble importing MayaEditorCore Module")
     raise
 
+# Maya's MayaQWidgetDockableMixin requires the same window instance to be returned
+# across workspace control restore cycles. This global is the only practical way
+# to maintain the instance across plugin reloads and workspace restores.
+# The try/except block above that deletes MayaEditorCore from sys.modules
+# handles hot-reloading of the core logic while this global preserves the
+# window handle required by Maya's UI restoration mechanism.
 MayaEditorMixinWindow: Optional[Any] = None
 
 
