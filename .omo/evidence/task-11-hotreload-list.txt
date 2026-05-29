@@ -1,0 +1,1 @@
+PASS: new modules added to hot-reload list

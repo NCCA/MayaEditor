@@ -52,6 +52,10 @@ def editor() -> None:
         "MayaEditorCore.SidebarModels",
         "MayaEditorCore.FindDialog",
         "MayaEditorCore.EditorIcons",
+        "MayaEditorCore.BaseHighlighter",
+        "MayaEditorCore.CodeFoldingManager",
+        "MayaEditorCore.SettingsManager",
+        "MayaEditorCore.OutputManager",
     )
 
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
