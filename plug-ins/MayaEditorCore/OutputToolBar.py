@@ -33,6 +33,8 @@ class OutputToolBar(QToolBar):
     """Toolbar for the output window with clear, copy, save, and help controls."""
 
     autocomplete_toggled = Signal(bool)
+    help_toggled = Signal(bool)
+    lint_toggled = Signal(bool)
 
     def __init__(self, parent: Optional[Any] = None) -> None:
         """Construct the output toolbar.
@@ -44,7 +46,7 @@ class OutputToolBar(QToolBar):
         """
         super().__init__(parent)
         assert parent is not None
-        self.parent: Any = parent
+        self._output_window = parent.output_window
         self.setFloatable(False)
         self.setMovable(False)
 
@@ -102,8 +104,7 @@ class OutputToolBar(QToolBar):
         state : bool
             True to show, False to hide.
         """
-        if self.parent:
-            self.parent.help_frame.setVisible(state)
+        self.help_toggled.emit(state)
 
     @Slot(bool)
     def show_lint(self, state: bool) -> None:
@@ -114,8 +115,7 @@ class OutputToolBar(QToolBar):
         state : bool
             True to show, False to hide.
         """
-        if self.parent and hasattr(self.parent, "lint_panel"):
-            self.parent.lint_panel.setVisible(state)
+        self.lint_toggled.emit(state)
 
     @Slot(bool)
     def toggle_autocomplete(self, state: bool) -> None:
@@ -143,7 +143,7 @@ class OutputToolBar(QToolBar):
         """Copy the output window content to the clipboard."""
         clipboard = QApplication.clipboard()
         clipboard.clear(mode=clipboard.Clipboard)
-        text = self.parent.output_window.toPlainText()
+        text = self._output_window.toPlainText()
         clipboard.setText(text, mode=clipboard.Clipboard)
 
     def save_to_file(self) -> None:
@@ -151,4 +151,4 @@ class OutputToolBar(QToolBar):
         file_name, _ = QFileDialog.getSaveFileName(self, "Save Output Text", "untitled.txt", "Text (*.txt)")
         if file_name:
             with open(file_name, "w") as output_file:
-                output_file.write(self.parent.output_window.toPlainText())
+                output_file.write(self._output_window.toPlainText())

@@ -65,6 +65,7 @@ class TextEdit(QPlainTextEdit):
     update_output = Signal(str)
     update_output_html = Signal(str)
     draw_line = Signal()
+    add_file_to_workspace = Signal(str)
 
     def __init__(
         self,
@@ -271,8 +272,7 @@ class TextEdit(QPlainTextEdit):
                 return False
             else:
                 self.filename = filename
-                if self.parent and hasattr(self.parent, "workspace"):
-                    self.parent.workspace.add_file(filename)
+                self.add_file_to_workspace.emit(filename)
         if self.filename:
             with open(self.filename, "w") as code_file:
                 code_file.write(self.toPlainText())
@@ -299,7 +299,7 @@ class TextEdit(QPlainTextEdit):
             if self.find_dialog.isVisible():
                 self.find_dialog.hide()
             else:
-                geometry = self.parent.geometry() if self.parent else QRect()
+                geometry = QObject.parent(self).geometry() if QObject.parent(self) else QRect()
                 self.find_dialog.move(
                     geometry.width() - self.find_dialog.width() - 10,
                     geometry.top(),

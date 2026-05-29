@@ -17,7 +17,7 @@
 from pathlib import Path
 from typing import Any, Optional
 
-from PySide6.QtCore import QEvent, Qt
+from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -33,6 +33,9 @@ from PySide6.QtWidgets import (
 class EditorToolBar(QToolBar):
     """Main editor toolbar with run, project-run, goto, and quick-load widgets."""
 
+    rename_workspace_requested = Signal()
+    file_open_requested = Signal(str)
+
     def __init__(self, parent: Optional[Any] = None) -> None:
         """Construct the toolbar and connect parent slots.
 
@@ -43,7 +46,7 @@ class EditorToolBar(QToolBar):
         """
         super().__init__(parent)
         assert parent is not None
-        self.parent: Any = parent
+        self._workspace = parent.workspace
         self.setFloatable(True)
         self.setMovable(True)
 
@@ -103,8 +106,7 @@ class EditorToolBar(QToolBar):
             obj is self.workspace_label
             and event.type() == QEvent.Type.MouseButtonDblClick
         ):
-            if hasattr(self.parent, "rename_workspace"):
-                self.parent.rename_workspace()
+            self.rename_workspace_requested.emit()
             return True
         return bool(super().eventFilter(obj, event))
 
@@ -122,9 +124,8 @@ class EditorToolBar(QToolBar):
         """Load the file entered in the quick-load field."""
         filename = self.quick_load_edit.text()
         path = Path(filename)
-        if path.is_file() and self.parent and hasattr(self.parent, "workspace"):
-            if filename not in self.parent.workspace.files:
-                self.parent.create_editor_and_load_files(filename)
+        if path.is_file() and filename not in self._workspace.files:
+            self.file_open_requested.emit(filename)
 
     def add_to_active_file_list(self, filename: str) -> None:
         """Add a filename to the run-project combo box.

@@ -29,16 +29,20 @@ class SideBarModels(QObject):
         Switch the active sidebar model.
     """
 
-    def __init__(self, parent: Any = None) -> None:
+    def __init__(self, parent: Any = None, root_path: str = ".", editor_tab: Any = None) -> None:
         """Initialise the three models and load icons.
 
         Parameters
         ----------
         parent : QObject or None
-            The parent EditorDialog instance.
+            The parent QObject for Qt ownership.
+        root_path : str
+            Filesystem root path used to locate icon files.
+        editor_tab : QTabWidget or None
+            The editor tab widget used by generate_code_model.
         """
         super().__init__(parent)
-        self.parent: Any = parent
+        self._editor_tab = editor_tab
         self.workspace: QStandardItemModel = QStandardItemModel()
         self.active_model: QStandardItemModel = self.workspace
         self.file_system_model: QFileSystemModel = QFileSystemModel()
@@ -47,7 +51,6 @@ class SideBarModels(QObject):
         self.file_system_model.setNameFilters(filters)
         self.code_system_model: QStandardItemModel = QStandardItemModel()
 
-        root_path = self.parent.root_path if self.parent else "."
         sep = "\\" if os_module.name == "nt" else "/"
         self.class_icon = QIcon(f"{root_path}{sep}plug-ins{sep}icons{sep}class.png")
         self.method_icon = QIcon(f"{root_path}{sep}plug-ins{sep}icons{sep}method.png")
@@ -141,7 +144,9 @@ class SideBarModels(QObject):
             Unused, present for slot compatibility.
         """
         self.code_system_model.clear()
-        tab = self.parent.ui.editor_tab
+        tab = self._editor_tab
+        if tab is None:
+            return
         widget = tab.widget(tab.currentIndex())
         if isinstance(widget, MelTextEdit):
             self.create_mel_model(widget)

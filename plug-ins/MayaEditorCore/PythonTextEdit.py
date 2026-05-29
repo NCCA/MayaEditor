@@ -322,8 +322,7 @@ class PythonTextEdit(TextEdit):
             if not filename:
                 return False
             self.filename = filename
-            if self.parent and hasattr(self.parent, "workspace"):
-                self.parent.workspace.add_file(filename)
+            self.add_file_to_workspace.emit(filename)
         if self.filename:
             with open(self.filename, "w") as code_file:
                 code_file.write(self.toPlainText())

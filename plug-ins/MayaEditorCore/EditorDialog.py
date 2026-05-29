@@ -125,7 +125,7 @@ class EditorDialogCore(QDialog):
         self.create_tool_bar()
         self.create_menu_bar()
 
-        self.sidebar_models = SideBarModels(self)
+        self.sidebar_models = SideBarModels(self, root_path=self.root_path, editor_tab=self.ui.editor_tab)
         self.ui.sidebar_treeview.setModel(self.sidebar_models.active_model)
         self.ui.sidebar_selector.currentIndexChanged.connect(self.change_active_model)
         self._autocomplete_enabled = True
@@ -401,9 +401,13 @@ class EditorDialogCore(QDialog):
     def create_tool_bar(self) -> None:
         """Create the editor and output toolbars."""
         self.tool_bar = EditorToolBar(self)
+        self.tool_bar.rename_workspace_requested.connect(self.rename_workspace)
+        self.tool_bar.file_open_requested.connect(self.create_editor_and_load_files)
         self.ui.dock_widget.setWidget(self.tool_bar)
         self.output_tool_bar = OutputToolBar(self)
         self.output_tool_bar.autocomplete_toggled.connect(self._on_autocomplete_toggled)
+        self.output_tool_bar.help_toggled.connect(self.output_manager.help_frame.setVisible)
+        self.output_tool_bar.lint_toggled.connect(self.output_manager.lint_panel.setVisible)
         self.ui.output_dock.setWidget(self.output_tool_bar)
 
     def tab_close_requested(self, index: int) -> None:
@@ -732,6 +736,7 @@ class EditorDialogCore(QDialog):
         editor.update_output.connect(self.output_manager.output_window.append_plain_text)
         editor.update_output_html.connect(self.output_manager.output_window.append_html)
         editor.draw_line.connect(self.output_manager.output_window.append_line)
+        editor.add_file_to_workspace.connect(self.workspace.add_file)
         self.update_fonts.connect(editor.set_editor_fonts)
         self.toggle_line_numbers.connect(editor.toggle_line_number)
         if isinstance(editor, PythonTextEdit):

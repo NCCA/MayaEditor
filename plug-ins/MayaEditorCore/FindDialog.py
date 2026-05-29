@@ -2,6 +2,7 @@
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Signal  # type: ignore
 from PySide6.QtGui import QIcon  # type: ignore
 from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QToolButton  # type: ignore
 
@@ -12,6 +13,10 @@ if TYPE_CHECKING:
 class FindDialog(QFrame):
     """Floating search / replace frame positioned over the parent editor."""
 
+    find_next_requested = Signal(str)
+    replace_requested = Signal(str, str)
+    replace_all_requested = Signal(str, str)
+
     def __init__(self, parent: "TextEdit") -> None:
         """Construct the FindDialog.
 
@@ -21,15 +26,18 @@ class FindDialog(QFrame):
             The editor this dialog is attached to.
         """
         super().__init__(parent)
-        self.parent: "TextEdit" = parent
         self.setFrameShape(QFrame.Box)
         self.layout = QGridLayout()
         self.setLayout(self.layout)
 
+        self.find_next_requested.connect(parent.find_next)
+        self.replace_requested.connect(parent.replace_current)
+        self.replace_all_requested.connect(parent.replace_all)
+
         self.text_search = QLineEdit()
         self.text_search.setToolTip("search")
         self.layout.addWidget(self.text_search, 0, 0, 1, 2)
-        self.text_search.textChanged.connect(self.parent.search_text)
+        self.text_search.textChanged.connect(parent.search_text)
         self.text_search.returnPressed.connect(self.return_pressed)
 
         self.items_found = QLabel("no results found")
@@ -86,12 +94,12 @@ class FindDialog(QFrame):
 
     def return_pressed(self) -> None:
         """Trigger find_next on the parent editor when Return is pressed."""
-        self.parent.find_next(self.text_search.text())
+        self.find_next_requested.emit(self.text_search.text())
 
     def _replace_pressed(self) -> None:
         """Replace the current match with the replacement text."""
-        self.parent.replace_current(self.text_search.text(), self.replace.text())
+        self.replace_requested.emit(self.text_search.text(), self.replace.text())
 
     def _replace_all_pressed(self) -> None:
         """Replace all occurrences of the search text with the replacement text."""
-        self.parent.replace_all(self.text_search.text(), self.replace.text())
+        self.replace_all_requested.emit(self.text_search.text(), self.replace.text())
