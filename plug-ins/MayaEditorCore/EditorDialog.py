@@ -30,31 +30,19 @@ from PySide6.QtCore import QDir, QSettings, QSize, Qt, Signal, Slot
 from PySide6.QtGui import (
     QAction,
     QCloseEvent,
-    QColor,
     QFont,
     QIcon,
     QKeyEvent,
     QKeySequence,
 )
 from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QComboBox,
-    QCompleter,
     QDialog,
     QFileDialog,
-    QFontDialog,
-    QFrame,
-    QGridLayout,
-    QHeaderView,
     QInputDialog,
-    QLabel,
     QLineEdit,
     QMenu,
     QMenuBar,
     QMessageBox,
-    QSplitter,
-    QTableWidget,
-    QTableWidgetItem,
 )
 
 from shiboken6 import wrapInstance  # type: ignore
@@ -62,6 +50,7 @@ from shiboken6 import wrapInstance  # type: ignore
 from .EditorToolBar import EditorToolBar
 from .MainUI import Ui_editor_dialog
 from .MelTextEdit import MelTextEdit
+from .OutputManager import OutputManager
 from .OutputToolBar import OutputToolBar
 from .PythonTextEdit import PythonTextEdit
 from .SettingsManager import SettingsManager
@@ -131,7 +120,8 @@ class EditorDialogCore(QDialog):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.Tool)
 
-        self.create_output_window()
+        self.output_manager = OutputManager(self)
+        self.output_manager.create()
         self.create_tool_bar()
         self.create_menu_bar()
 
@@ -150,8 +140,8 @@ class EditorDialogCore(QDialog):
 
         self.workspace = Workspace()
 
-        self.update_output.connect(self.output_window.append_plain_text)
-        self.update_output_html.connect(self.output_window.append_html)
+        self.update_output.connect(self.output_manager.output_window.append_plain_text)
+        self.update_output_html.connect(self.output_manager.output_window.append_html)
 
         self.load_settings()
         self.create_live_editors()
@@ -193,7 +183,7 @@ class EditorDialogCore(QDialog):
         message : str
             The debug message text.
         """
-        self.output_window.appendHtml(
+        self.output_manager.output_window.appendHtml(
             f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>'
         )
 
@@ -536,7 +526,7 @@ class EditorDialogCore(QDialog):
         tab = self.ui.editor_tab
         path = Path(code_file_name)
         if not path.is_file():
-            self.output_window.appendHtml(
+            self.output_manager.output_window.appendHtml(
                 f'<b><p style="color:red">Error :</p></b><p>'
                 f"Problem loading file {code_file_name} from project "
                 f"perhaps it has been removed</p>"
@@ -711,152 +701,25 @@ class EditorDialogCore(QDialog):
         self.ui.editor_tab.widget(0).setFocus()
         self.sidebar_models.append_to_workspace("Mel live_window", self.mel_icon)
 
-    def create_output_window(self) -> None:
-        """Create the output window, help panel, and Maya command browser."""
-        self.output_window = TextEdit(
-            parent=self, read_only=True, show_line_numbers=False
-        )
-        self.update_fonts.connect(self.output_window.set_editor_fonts)
-        self.update_fonts.emit(self.font)
+    # ---------------------------------------------------------------------------
+    # Forwarding properties — widgets live on OutputManager; these keep
+    # OutputToolBar working unchanged until Task 10 updates its references.
+    # ---------------------------------------------------------------------------
 
-        self.output_splitter = QSplitter()
-        self.output_splitter.addWidget(self.output_window)
+    @property
+    def output_window(self) -> TextEdit:
+        """Output window widget (owned by :class:`OutputManager`)."""
+        return self.output_manager.output_window
 
-        self.help_frame = QFrame()
-        grid_layout = QGridLayout()
-        grid_layout.setObjectName("grid_layout")
-        self.help_frame.setLayout(grid_layout)
+    @property
+    def help_frame(self):  # type: ignore[return]
+        """Help panel frame (owned by :class:`OutputManager`)."""
+        return self.output_manager.help_frame
 
-        self.help_items = QComboBox()
-        self.help_items.setObjectName("help_items")
-        grid_layout.addWidget(self.help_items, 0, 2, 1, 1)
-
-        self.label = QLabel("Help")
-        grid_layout.addWidget(self.label, 0, 0, 1, 1)
-
-        self.search_help = QLineEdit(self.help_frame)
-        self.search_help.setObjectName("search_help")
-        self.search_help.setToolTip("type to search maya.cmds help")
-        grid_layout.addWidget(self.search_help, 0, 1, 1, 1)
-
-        self.help_output_window = TextEdit(
-            parent=self.help_frame, read_only=True, show_line_numbers=False
-        )
-        grid_layout.addWidget(self.help_output_window, 1, 0, 3, 3)
-
-        self.output_splitter.addWidget(self.help_frame)
-        self.create_lint_panel()
-        self.ui.output_window_layout.addWidget(self.output_splitter)
-
-        self.maya_cmds = cmds.help("[a-z]*", list=True, lng="Python")
-        for c in self.maya_cmds:
-            self.help_items.addItem(c)
-        self.help_items.currentIndexChanged.connect(self.run_maya_help)
-        self.search_help.returnPressed.connect(self.search_maya_help)
-
-        completer = QCompleter(self.maya_cmds)
-        self.search_help.setCompleter(completer)
-
-    def create_lint_panel(self) -> None:
-        """Create the lint results panel and add it to the output splitter.
-
-        The panel is hidden by default and can be shown via the *Show Lint*
-        checkbox in :class:`OutputToolBar`.
-        """
-        self.lint_panel = QTableWidget(0, 4)
-        self.lint_panel.setHorizontalHeaderLabels(["Sev", "Line", "Code", "Message"])
-        self.lint_panel.horizontalHeader().setSectionResizeMode(
-            3, QHeaderView.ResizeMode.Stretch
-        )
-        self.lint_panel.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.lint_panel.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.lint_panel.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.lint_panel.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.lint_panel.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.lint_panel.verticalHeader().setVisible(False)
-        self.lint_panel.setAlternatingRowColors(True)
-        self.lint_panel.cellDoubleClicked.connect(self._lint_row_activated)
-        self.lint_panel.setVisible(False)
-        self.output_splitter.addWidget(self.lint_panel)
-
-    @Slot(list)
-    def update_lint_panel(self, diagnostics: list) -> None:
-        """Populate the lint panel with *diagnostics*.
-
-        Parameters
-        ----------
-        diagnostics : list[Diagnostic]
-            Diagnostics from the active Python editor.
-        """
-        self.lint_panel.setRowCount(0)
-        for diag in diagnostics:
-            row = self.lint_panel.rowCount()
-            self.lint_panel.insertRow(row)
-
-            sev_item = QTableWidgetItem(diag.severity[0].upper())  # "E" or "W"
-            sev_item.setForeground(
-                QColor(255, 80, 80) if diag.severity == "error" else QColor(255, 200, 0)
-            )
-            self.lint_panel.setItem(row, 0, sev_item)
-
-            line_item = QTableWidgetItem(f"{diag.row}:{diag.col}")
-            line_item.setData(Qt.UserRole, diag.row)
-            self.lint_panel.setItem(row, 1, line_item)
-
-            self.lint_panel.setItem(row, 2, QTableWidgetItem(diag.code))
-            self.lint_panel.setItem(row, 3, QTableWidgetItem(diag.message))
-
-    @Slot(int, int)
-    def _lint_row_activated(self, row: int, _col: int) -> None:
-        """Jump the active editor to the line referenced by the clicked row.
-
-        Parameters
-        ----------
-        row : int
-            The row index in the lint panel.
-        _col : int
-            Unused column index.
-        """
-        line_item = self.lint_panel.item(row, 1)
-        if line_item is None:
-            return
-        line_number = line_item.data(Qt.UserRole)
-        if line_number is None:
-            return
-        editor = self.ui.editor_tab.currentWidget()
-        if editor and hasattr(editor, "goto_line"):
-            editor.goto_line(int(line_number) - 1)
-
-    @Slot(int)
-    def run_maya_help(self, index: int) -> None:
-        """Display help for the selected Maya command.
-
-        Parameters
-        ----------
-        index : int
-            Index of the selected command in the combo box.
-        """
-        command = self.help_items.currentText()
-        output = cmds.help(command, language="python")
-        output = output.strip("\n")
-        self.help_output_window.clear()
-        self.help_output_window.appendPlainText(output)
-
-    @Slot()
-    def search_maya_help(self) -> None:
-        """Display help for the Maya command entered in the search field."""
-        help_text = self.search_help.text()
-        if help_text in self.maya_cmds:
-            output = cmds.help(help_text, language="python")
-            output = output.strip("\n")
-            self.help_output_window.clear()
-            self.help_output_window.appendPlainText(output)
+    @property
+    def lint_panel(self):  # type: ignore[return]
+        """Lint results panel (owned by :class:`OutputManager`)."""
+        return self.output_manager.lint_panel
 
     def connect_editor_slots(self, editor: TextEdit) -> None:
         """Connect the standard signals for an editor widget.
@@ -866,9 +729,9 @@ class EditorDialogCore(QDialog):
         editor : TextEdit
             The editor widget to wire up.
         """
-        editor.update_output.connect(self.output_window.append_plain_text)
-        editor.update_output_html.connect(self.output_window.append_html)
-        editor.draw_line.connect(self.output_window.append_line)
+        editor.update_output.connect(self.output_manager.output_window.append_plain_text)
+        editor.update_output_html.connect(self.output_manager.output_window.append_html)
+        editor.draw_line.connect(self.output_manager.output_window.append_line)
         self.update_fonts.connect(editor.set_editor_fonts)
         self.toggle_line_numbers.connect(editor.toggle_line_number)
         if isinstance(editor, PythonTextEdit):
@@ -894,10 +757,10 @@ class EditorDialogCore(QDialog):
         The panel will be repopulated once the newly active editor's linter
         fires (or immediately if the editor already has cached results).
         """
-        self.lint_panel.setRowCount(0)
+        self.output_manager.lint_panel.setRowCount(0)
         editor = self.ui.editor_tab.currentWidget()
         if isinstance(editor, PythonTextEdit) and editor._diagnostics:
-            self.update_lint_panel(editor._diagnostics)
+            self.output_manager.update_lint_panel(editor._diagnostics)
 
     @Slot(list)
     def _on_editor_lint_results(self, diagnostics: list) -> None:
@@ -912,7 +775,7 @@ class EditorDialogCore(QDialog):
         sending_editor = self.sender()
         active_editor = self.ui.editor_tab.currentWidget()
         if sending_editor is active_editor:
-            self.update_lint_panel(diagnostics)
+            self.output_manager.update_lint_panel(diagnostics)
 
     @Slot(int)
     def change_active_model(self, index: int) -> None:
