@@ -4,6 +4,8 @@ from typing import Any, List
 
 import maya.cmds as cmds  # type: ignore
 
+from PySide6.QtCore import QRegularExpression  # type: ignore
+
 from .BaseHighlighter import BaseHighlighter  # type: ignore
 
 
@@ -15,4 +17,4 @@ class MelHighlighter(BaseHighlighter):
 
     def __init__(self, parent: Any = None) -> None:
         super().__init__(parent, self.keywords, self.operators, self.braces, lambda: self.mayaCmds)
-        self.rules += [(r"\bproc\b\s*(\w+)", 1, self.styles["deffunc"]), (r"//[^\n]*", 0, self.styles["comment"])]
+        self.rules += [(QRegularExpression(r"\bproc\b\s*(\w+)"), 1, self.styles["deffunc"]), (QRegularExpression(r"//[^\n]*"), 0, self.styles["comment"])]
