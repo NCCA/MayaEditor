@@ -120,6 +120,7 @@ class EditorDialogCore(QDialog):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.Tool)
 
+        self.workspace = Workspace()
         self.output_manager = OutputManager(self)
         self.output_manager.create()
         self.create_tool_bar()
@@ -137,8 +138,6 @@ class EditorDialogCore(QDialog):
         self.ui.editor_tab.currentChanged.connect(self._on_active_tab_changed)
         self.ui.sidebar_treeview.setHeaderHidden(True)
         self.ui.sidebar_treeview.clicked.connect(self.sidebar_view_changed)
-
-        self.workspace = Workspace()
 
         self.update_output.connect(self.output_manager.output_window.append_plain_text)
         self.update_output_html.connect(self.output_manager.output_window.append_html)

@@ -46,7 +46,6 @@ class EditorToolBar(QToolBar):
         """
         super().__init__(parent)
         assert parent is not None
-        self._workspace = parent.workspace
         self.setFloatable(True)
         self.setMovable(True)
 
@@ -124,8 +123,10 @@ class EditorToolBar(QToolBar):
         """Load the file entered in the quick-load field."""
         filename = self.quick_load_edit.text()
         path = Path(filename)
-        if path.is_file() and filename not in self._workspace.files:
-            self.file_open_requested.emit(filename)
+        parent = self.parent()
+        if path.is_file() and parent and hasattr(parent, "workspace"):
+            if filename not in parent.workspace.files:
+                self.file_open_requested.emit(filename)
 
     def add_to_active_file_list(self, filename: str) -> None:
         """Add a filename to the run-project combo box.
