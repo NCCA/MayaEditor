@@ -242,11 +242,11 @@ if __name__ == "__main__":
 
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
     sys.path.insert(0, root_path + "/plug-ins")
-    import sys
-    import trace
+    import traceback
 
     import MayaEditorCore
 
+    window = None
     try:
         window = MainWindow()
         window.resize(1024, 720)
@@ -256,5 +256,6 @@ if __name__ == "__main__":
     except Exception:
         traceback.print_exc()
     finally:
-        window._stdout_wrapper.restore()
-        window._stderr_wrapper.restore()
+        if window is not None:
+            window._stdout_wrapper.restore()
+            window._stderr_wrapper.restore()
