@@ -16,19 +16,21 @@
 """Python editor widget extending TextEdit with highlighting, AST code model and execution."""
 
 import ast
+import logging
 from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
-import maya.cmds as cmds
 from maya import utils
-from PySide6.QtCore import QEvent, QObject, QPoint, QStringListModel, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QKeyEvent, QTextCharFormat, QTextCursor
-from PySide6.QtWidgets import QCompleter, QFileDialog, QTextEdit, QToolTip
+from PySide6.QtWidgets import QCompleter, QFileDialog, QToolTip
 
 from .JediCompleter import JediCompletionPopup, get_jedi_completions
 from .PythonHighlighter import PythonHighlighter
 from .RuffLinter import Diagnostic, RuffLinter
 from .TextEdit import TextEdit
+
+logger = logging.getLogger(__name__)
 
 # Optional Jedi-based autocomplete support
 try:
@@ -202,7 +204,7 @@ class PythonTextEdit(TextEdit):
             else:
                 self._jedi_popup.hide()
         except Exception:
-            pass
+            logger.debug("Failed to update completions", exc_info=True)
 
     @Slot(bool)
     def setAutoCompletion(self, enabled: bool) -> None:
@@ -231,8 +233,6 @@ class PythonTextEdit(TextEdit):
             if start < 0 or start > len(doc_text) or pos < 0 or pos > len(doc_text):
                 return
 
-            partial_word = doc_text[start:pos]
-
             # Select and replace
             cursor.setPosition(start)
             cursor.setPosition(pos, QTextCursor.KeepAnchor)
@@ -241,7 +241,7 @@ class PythonTextEdit(TextEdit):
             # Move cursor to end of inserted text
             self.setTextCursor(cursor)
         except Exception:
-            pass
+            logger.debug("Failed to insert completion", exc_info=True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle key events with Jedi popup integration.
@@ -251,7 +251,14 @@ class PythonTextEdit(TextEdit):
         are updated after alphanumeric or dot input.
         """
         if self._jedi_popup.isVisible():
-            if event.key() in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Return, Qt.Key_Enter, Qt.Key_Escape, Qt.Key_Tab):
+            if event.key() in (
+                Qt.Key_Up,
+                Qt.Key_Down,
+                Qt.Key_Return,
+                Qt.Key_Enter,
+                Qt.Key_Escape,
+                Qt.Key_Tab,
+            ):
                 self._jedi_popup.keyPressEvent(event)
                 return
 
@@ -267,7 +274,7 @@ class PythonTextEdit(TextEdit):
                 # Hide popup on these characters
                 self._jedi_popup.hide()
         except Exception:
-            pass
+            logger.debug("Completion update after keypress failed", exc_info=True)
 
     # ------------------------------------------------------------------
     # Execution
@@ -338,7 +345,10 @@ class PythonTextEdit(TextEdit):
     # ------------------------------------------------------------------
 
     def extract_classes_and_functions(
-        self, node_to_traverse: Any, current_object: List[Any], inside_class: bool = False
+        self,
+        node_to_traverse: Any,
+        current_object: List[Any],
+        inside_class: bool = False,
     ) -> None:
         """Recursively extract class and function definitions from the AST."""
         for node in node_to_traverse.body:

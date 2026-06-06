@@ -1,4 +1,4 @@
-############################################################################### Copyright (C) 2022  Jonathan Macey
+# Copyright (C) 2022  Jonathan Macey
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,13 @@ Manages the list of files associated with a workspace, and handles saving
 """
 
 import json
+import logging
 from pathlib import Path
 from typing import List
 
 from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
+
+logger = logging.getLogger(__name__)
 
 
 class Workspace:
@@ -104,7 +107,7 @@ class Workspace:
                     self.root = workspace.get("root", "")
                     return True
             except Exception:
-                print("problem loading last workspace")
+                logger.warning("Problem loading last workspace", exc_info=True)
                 self.workspace_name = ""
                 self.files = []
                 self.file_name = ""
@@ -142,9 +145,7 @@ class Workspace:
             msg_box.setWindowTitle("Warning!")
             msg_box.setText("Workspace Not Saved")
             msg_box.setInformativeText("Do you want to save your changes?")
-            msg_box.setStandardButtons(
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
-            )
+            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             msg_box.setDefaultButton(QMessageBox.Save)
             ret = msg_box.exec()
             if ret == QMessageBox.Save:

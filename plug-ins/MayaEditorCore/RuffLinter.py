@@ -28,12 +28,15 @@ receive the results on the Qt main thread.
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import subprocess
 from collections import namedtuple
 from typing import List, Optional
 
 from PySide6.QtCore import QMutex, QObject, QThread, Signal, Slot
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Public data type
@@ -159,7 +162,7 @@ class _RuffWorker(QObject):
                 _RuffWorker._ruff_missing_warned = True
                 # Emit empty list — caller will display a one-time warning via
                 # the diagnostics_ready signal carrying an empty list.
-                print("[MayaEditor] ruff not found on PATH — linting disabled. Install ruff: pip install ruff")
+                logger.warning("ruff not found on PATH — linting disabled. Install ruff: pip install ruff")
             self.diagnostics_ready.emit([])
             return
         except subprocess.TimeoutExpired:
@@ -186,7 +189,7 @@ class _RuffWorker(QObject):
                         )
                     )
             except (json.JSONDecodeError, KeyError):
-                pass
+                logger.debug("Failed to parse ruff JSON output", exc_info=True)
 
         self.diagnostics_ready.emit(diagnostics)
 

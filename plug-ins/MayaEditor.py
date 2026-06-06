@@ -18,9 +18,9 @@ Load the MayaEditorCore package and provide a dockable script editor that
 replaces the built-in Script Editor.
 """
 
+import logging
 import os
 import sys
-from builtins import int
 from typing import Any, Optional
 
 import maya.api.OpenMaya as OpenMaya
@@ -28,17 +28,19 @@ import maya.api.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
 import maya.mel as mel
 
+logger = logging.getLogger(__name__)
+
 try:
     root_path = cmds.moduleInfo(path=True, moduleName="MayaEditor")
 except RuntimeError:
     root_path = os.path.dirname(os.path.abspath(__file__)).replace("/plug-ins", "")
 
-sys.path.insert(0, root_path + "/plug-ins")
+sys.path.insert(0, os.path.join(root_path, "plug-ins"))
 try:
-    print("deleting MayaEditorCore")
+    logger.debug("Deleting MayaEditorCore for hot-reload")
     del sys.modules["MayaEditorCore"]
 except KeyError:
-    pass
+    logger.debug("MayaEditorCore not loaded; skipping delete")
 
 try:
     import MayaEditorCore  # noqa: F401
@@ -73,10 +75,10 @@ def MayaEditorUIScript(restore: bool = False) -> Optional[Any]:
     import MayaEditorCore
 
     if restore:
-        restoredControl = OpenMayaUI.MQtUtil.getCurrentParent()
+        restored_control = OpenMayaUI.MQtUtil.getCurrentParent()
 
     if MayaEditorMixinWindow is None:
-        print("creating a new ui")
+        logger.info("Creating a new MayaEditor UI")
         try:
             MayaEditorMixinWindow = MayaEditorCore.EditorDialog()
             MayaEditorMixinWindow.setObjectName("MayaEditor")
@@ -87,8 +89,8 @@ def MayaEditorUIScript(restore: bool = False) -> Optional[Any]:
             raise
 
     if restore:
-        mixinPtr = OpenMayaUI.MQtUtil.findControl(MayaEditorMixinWindow.objectName())
-        OpenMayaUI.MQtUtil.addWidgetToMayaLayout(int(mixinPtr), int(restoredControl))
+        mixin_ptr = OpenMayaUI.MQtUtil.findControl(MayaEditorMixinWindow.objectName())
+        OpenMayaUI.MQtUtil.addWidgetToMayaLayout(int(mixin_ptr), int(restored_control))
     else:
         MayaEditorMixinWindow.show(
             dockable=True,
@@ -129,11 +131,9 @@ class MayaEditor(OpenMaya.MPxCommand):
         ui = MayaEditorUIScript()
         if ui is not None:
             try:
-                cmds.workspaceControl(
-                    "MayaEditorWorkspaceControl", e=True, restore=True
-                )
+                cmds.workspaceControl("MayaEditorWorkspaceControl", e=True, restore=True)
             except Exception:
-                pass
+                logger.debug("Workspace control restore failed", exc_info=True)
         return ui
 
     @classmethod
@@ -155,14 +155,14 @@ class MayaEditor(OpenMaya.MPxCommand):
             try:
                 MayaEditorMixinWindow.close()
             except Exception:
-                pass
+                logger.debug("Failed to close MayaEditor UI", exc_info=True)
             try:
                 cmds.deleteUI(
                     f"{MayaEditorMixinWindow.objectName()}WorkspaceControl",
                     control=True,
                 )
             except Exception:
-                pass
+                logger.debug("Failed to delete MayaEditor workspace control", exc_info=True)
             MayaEditorMixinWindow.setParent(None)
             MayaEditorMixinWindow.deleteLater()
             MayaEditorMixinWindow = None
@@ -188,9 +188,7 @@ def initializePlugin(plugin: Any) -> None:
                 }
             """)
     except Exception:
-        OpenMaya.MGlobal.displayError(
-            f"Failed to register command: {MayaEditor.CMD_NAME}"
-        )
+        OpenMaya.MGlobal.displayError(f"Failed to register command: {MayaEditor.CMD_NAME}")
 
 
 SCRIPT_EDITOR_PROC = """
@@ -224,17 +222,11 @@ def uninitializePlugin(plugin: Any) -> None:
         plugin_fn.deregisterCommand(MayaEditor.CMD_NAME)
 
     except Exception:
-        OpenMaya.MGlobal.displayError(
-            f"Failed to deregister command: {MayaEditor.CMD_NAME}"
-        )
+        OpenMaya.MGlobal.displayError(f"Failed to deregister command: {MayaEditor.CMD_NAME}")
     mel.eval(SCRIPT_EDITOR_PROC)
 
 
 if __name__ == "__main__":
     plugin_name = "MayaEditor.py"
-    cmds.evalDeferred(
-        f'if cmds.pluginInfo("{plugin_name}", q=True, loaded=True): cmds.unloadPlugin("{plugin_name}")'
-    )
-    cmds.evalDeferred(
-        f'if not cmds.pluginInfo("{plugin_name}", q=True, loaded=True): cmds.loadPlugin("{plugin_name}")'
-    )
+    cmds.evalDeferred(f'if cmds.pluginInfo("{plugin_name}", q=True, loaded=True): cmds.unloadPlugin("{plugin_name}")')
+    cmds.evalDeferred(f'if not cmds.pluginInfo("{plugin_name}", q=True, loaded=True): cmds.loadPlugin("{plugin_name}")')

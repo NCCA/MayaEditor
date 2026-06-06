@@ -126,7 +126,9 @@ class OutputManager:
         self.lint_panel.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.ResizeToContents
         )
-        self.lint_panel.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.lint_panel.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
         self.lint_panel.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.lint_panel.verticalHeader().setVisible(False)
         self.lint_panel.setAlternatingRowColors(True)

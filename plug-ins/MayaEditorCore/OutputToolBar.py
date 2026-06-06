@@ -148,7 +148,9 @@ class OutputToolBar(QToolBar):
 
     def save_to_file(self) -> None:
         """Save the output window content to a text file."""
-        file_name, _ = QFileDialog.getSaveFileName(self, "Save Output Text", "untitled.txt", "Text (*.txt)")
+        file_name, _ = QFileDialog.getSaveFileName(
+            self, "Save Output Text", "untitled.txt", "Text (*.txt)"
+        )
         if file_name:
             with open(file_name, "w") as output_file:
                 output_file.write(self._output_window.toPlainText())

@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-import sys
+import logging
 import signal
+import sys
 import threading
 from typing import Any, Dict, List, Optional
 
@@ -21,6 +22,8 @@ except Exception:
     Project = None  # type: ignore
     Interpreter = None  # type: ignore
     _JEDI_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 # Cache the Jedi project to avoid recreating it every time
 _jedi_project = None
@@ -54,6 +57,7 @@ def _exec_code_with_timeout(code: str, namespace: Dict[str, Any]) -> Dict[str, A
     )
 
     if can_use_signal:
+
         def _handle_timeout(signum, frame) -> None:  # type: ignore[no-untyped-def]
             raise TimeoutError("exec timed out")
 
@@ -66,6 +70,7 @@ def _exec_code_with_timeout(code: str, namespace: Dict[str, Any]) -> Dict[str, A
         except TimeoutError:
             return {}
         except Exception:
+            logger.debug("Jedi exec timeout runner failed", exc_info=True)
             return {}
         finally:
             signal.alarm(0)
@@ -79,6 +84,7 @@ def _exec_code_with_timeout(code: str, namespace: Dict[str, Any]) -> Dict[str, A
             exec(code, namespace)
             result.update(namespace)
         except Exception:
+            logger.debug("Jedi exec thread failed", exc_info=True)
             result.clear()
         finally:
             finished.set()
@@ -279,6 +285,7 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
             interpreter = Interpreter(source, namespaces=[combined_namespace], project=project)
             completions = interpreter.complete(line, col)
         except Exception:
+            logger.debug("Interpreter completions failed; falling back to Script", exc_info=True)
             # Fallback to Script mode
             assert Script is not None
             script = Script(source, path=filename, project=project)
@@ -310,9 +317,10 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
                                     callables.append(attr)
                                 else:
                                     non_callables.append(attr)
-                            except:
+                            except Exception:
+                                logger.debug("Failed to introspect completion attribute", exc_info=True)
                                 # If we can't get it, skip it
-                                pass
+                                continue
 
                         # Prefer callables but include non-callables too
                         direct_completions = callables + non_callables
@@ -336,5 +344,5 @@ def get_jedi_completions(source: str, line: int, col: int, filename: str = "") -
 
         return names
     except Exception:
-        # Silently fail
+        logger.debug("Jedi completion failed", exc_info=True)
         return []

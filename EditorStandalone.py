@@ -152,7 +152,9 @@ class MainWindow(QMainWindow):
             msg_box.setWindowTitle("Warning!")
             msg_box.setText("Maya Scene Not Saved")
             msg_box.setInformativeText("Do you want to save your changes?")
-            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg_box.setStandardButtons(
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+            )
             msg_box.setDefaultButton(QMessageBox.Save)
             ret = msg_box.exec()
             if ret == QMessageBox.Save:

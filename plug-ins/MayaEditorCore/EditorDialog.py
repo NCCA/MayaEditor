@@ -18,6 +18,7 @@ This is the main dialog class where all child widgets are created and managed.
 It can work standalone or as a Maya dockable plugin mixin.
 """
 
+import logging
 from pathlib import Path
 from typing import Any, Optional
 
@@ -25,7 +26,6 @@ import maya.api.OpenMaya as OpenMaya
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
-
 from PySide6.QtCore import QDir, QSettings, QSize, Qt, Signal, Slot
 from PySide6.QtGui import (
     QAction,
@@ -44,7 +44,6 @@ from PySide6.QtWidgets import (
     QMenuBar,
     QMessageBox,
 )
-
 from shiboken6 import wrapInstance  # type: ignore
 
 from .EditorToolBar import EditorToolBar
@@ -57,6 +56,8 @@ from .SettingsManager import SettingsManager
 from .SidebarModels import SideBarModels
 from .TextEdit import TextEdit
 from .Workspace import Workspace
+
+logger = logging.getLogger(__name__)
 
 
 def get_main_window() -> Any:
@@ -106,9 +107,7 @@ class EditorDialogCore(QDialog):
         super().__init__(parent=parent)
         self.setObjectName(self.__class__.editor_name)
 
-        self.callback_id: int = OpenMaya.MCommandMessage.addCommandOutputCallback(
-            self.message_callback, ""
-        )
+        self.callback_id: int = OpenMaya.MCommandMessage.addCommandOutputCallback(self.message_callback, "")
         self.settings_manager = SettingsManager(self, QSettings("NCCA", "NCCA_Maya_Editor"))
         self.file_system_root: str = QDir.currentPath()
         self.root_path: str = cmds.moduleInfo(path=True, moduleName="MayaEditor")
@@ -132,9 +131,7 @@ class EditorDialogCore(QDialog):
         self._autocomplete_enabled = True
 
         self.ui.editor_tab.tabCloseRequested.connect(self.tab_close_requested)
-        self.ui.editor_tab.currentChanged.connect(
-            self.sidebar_models.code_model_needs_update
-        )
+        self.ui.editor_tab.currentChanged.connect(self.sidebar_models.code_model_needs_update)
         self.ui.editor_tab.currentChanged.connect(self._on_active_tab_changed)
         self.ui.sidebar_treeview.setHeaderHidden(True)
         self.ui.sidebar_treeview.clicked.connect(self.sidebar_view_changed)
@@ -182,9 +179,7 @@ class EditorDialogCore(QDialog):
         message : str
             The debug message text.
         """
-        self.output_manager.output_window.appendHtml(
-            f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>'
-        )
+        self.output_manager.output_window.appendHtml(f'<b><p style="color:yellow">Debug :</p></b><p>{message}</p>')
 
     def message_callback(self, message: str, mtype: int, client_data: Any) -> None:
         """Callback for Maya command output to route messages to the output window.
@@ -312,20 +307,14 @@ class EditorDialogCore(QDialog):
 
         show_output_window_action = QAction("Show Output Window", self)
         settings_menu.addAction(show_output_window_action)
-        show_output_window_action.toggled.connect(
-            lambda state: self.ui.output_window_group_box.setVisible(state)
-        )
+        show_output_window_action.toggled.connect(lambda state: self.ui.output_window_group_box.setVisible(state))
         show_output_window_action.setCheckable(True)
         show_output_window_action.setChecked(True)
-        show_output_window_action.setShortcut(
-            QKeySequence(Qt.ControlModifier | Qt.Key_1)
-        )
+        show_output_window_action.setShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_1))
 
         show_sidebar_action = QAction("Show Sidebar", self)
         settings_menu.addAction(show_sidebar_action)
-        show_sidebar_action.toggled.connect(
-            lambda state: self.ui.side_bar.setVisible(state)
-        )
+        show_sidebar_action.toggled.connect(lambda state: self.ui.side_bar.setVisible(state))
         show_sidebar_action.setCheckable(True)
         show_sidebar_action.setChecked(True)
         show_sidebar_action.setShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_0))
@@ -335,16 +324,12 @@ class EditorDialogCore(QDialog):
 
     def set_workspace_root(self) -> None:
         """Open a directory dialog to set the file-system sidebar root."""
-        directory = QFileDialog.getExistingDirectory(
-            self, "Select Workspace Root", self.file_system_root
-        )
+        directory = QFileDialog.getExistingDirectory(self, "Select Workspace Root", self.file_system_root)
         if directory:
             self.file_system_root = directory
             self.sidebar_models.file_system_model.setRootPath(directory)
             if self.ui.sidebar_selector.currentIndex() == 1:
-                self.ui.sidebar_treeview.setRootIndex(
-                    self.sidebar_models.file_system_model.index(directory)
-                )
+                self.ui.sidebar_treeview.setRootIndex(self.sidebar_models.file_system_model.index(directory))
             if self.workspace.file_name:
                 self.workspace.root = directory
                 self.workspace.is_saved = False
@@ -432,9 +417,7 @@ class EditorDialogCore(QDialog):
             msg_box.setWindowTitle("Warning!")
             msg_box.setText("File has been Modified")
             msg_box.setInformativeText("Do you want to save your changes?")
-            msg_box.setStandardButtons(
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
-            )
+            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             msg_box.setDefaultButton(QMessageBox.Save)
             ret = msg_box.exec()
             if ret == QMessageBox.Save:
@@ -574,9 +557,7 @@ class EditorDialogCore(QDialog):
 
             if path.suffix in (".mel", ".py"):
                 self.tool_bar.add_to_active_file_list(short_name)
-                editor.code_model_changed.connect(
-                    self.sidebar_models.code_model_needs_update
-                )
+                editor.code_model_changed.connect(self.sidebar_models.code_model_needs_update)
 
             self.workspace.add_file(code_file_name)
             self.connect_editor_slots(editor)
@@ -797,9 +778,7 @@ class EditorDialogCore(QDialog):
         elif index == 1:
             self.ui.sidebar_treeview.setModel(self.sidebar_models.file_system_model)
             self.ui.sidebar_treeview.setHeaderHidden(False)
-            self.ui.sidebar_treeview.setRootIndex(
-                self.sidebar_models.file_system_model.index(self.file_system_root)
-            )
+            self.ui.sidebar_treeview.setRootIndex(self.sidebar_models.file_system_model.index(self.file_system_root))
         elif index == 2:
             self.ui.sidebar_treeview.setModel(self.sidebar_models.code_system_model)
             self.sidebar_models.generate_code_model()
@@ -834,28 +813,29 @@ class EditorDialogStandalone(EditorDialogCore):
             splitter_settings = self.settings.value("splitter")
             self.ui.editor_splitter.restoreState(splitter_settings)
         except Exception:
-            pass
+            logger.debug("Standalone: failed to restore editor splitter state", exc_info=True)
         try:
             splitter_settings = self.settings.value("vertical_splitter")
             self.ui.vertical_splitter.restoreState(splitter_settings)
         except Exception:
-            pass
+            logger.debug("Standalone: failed to restore vertical splitter state", exc_info=True)
         try:
             self.resize(self.settings.value("size", QSize(1024, 720)))
         except Exception:
+            logger.debug("Standalone: failed to restore window size", exc_info=True)
             self.resize(QSize(1024, 720))
         try:
             workspace = self.settings.value("workspace")
             if workspace:
                 self.load_workspace_to_editor(workspace)
         except Exception:
-            pass
+            logger.debug("Standalone: failed to restore workspace", exc_info=True)
         try:
             root = self.settings.value("file_system_root")
             if root:
                 self.file_system_root = str(root)
         except Exception:
-            pass
+            logger.debug("Standalone: failed to restore file system root", exc_info=True)
 
         self.font = QFont("Courier New", 12, 50, False)
         self.update_fonts.emit(self.font)

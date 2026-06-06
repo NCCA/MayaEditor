@@ -17,7 +17,7 @@
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from PySide6.QtCore import QRect, Slot
-from PySide6.QtGui import QTextBlock, QTextCursor
+from PySide6.QtGui import QTextBlock
 
 if TYPE_CHECKING:
     from .TextEdit import TextEdit

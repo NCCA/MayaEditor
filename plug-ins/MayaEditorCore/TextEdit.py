@@ -26,8 +26,8 @@ from PySide6.QtGui import (
     QColor,
     QFont,
     QFontMetricsF,
-    QPaintEvent,
     QPainter,
+    QPaintEvent,
     QPen,
     QResizeEvent,
     QTextCursor,
@@ -106,7 +106,6 @@ class TextEdit(QPlainTextEdit):
             self.setPlainText(code)
             self.find_dialog = FindDialog(self)
             self.find_dialog.hide()
-        self.installEventFilter(self)
         self.show_line_numbers: bool = show_line_numbers
         if self.show_line_numbers:
             self.line_number_area: LineNumberArea = LineNumberArea(self)
@@ -139,9 +138,7 @@ class TextEdit(QPlainTextEdit):
         font : QFont
             The font to apply.
         """
-        self.setTabStopDistance(
-            QFontMetricsF(self.font()).horizontalAdvance(" ") * self.tab_size
-        )
+        self.setTabStopDistance(QFontMetricsF(self.font()).horizontalAdvance(" ") * self.tab_size)
         self.setFont(font)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
@@ -168,34 +165,19 @@ class TextEdit(QPlainTextEdit):
         """
         if isinstance(obj, TextEdit) and event.type() == QEvent.KeyPress:
             key_event = event
-            if (
-                key_event.key() == Qt.Key_S
-                and key_event.modifiers() == Qt.ControlModifier
-            ):
+            if key_event.key() == Qt.Key_S and key_event.modifiers() == Qt.ControlModifier:
                 self.save_file()
                 return True
-            elif (
-                key_event.key() in (Qt.Key_Plus, Qt.Key_Equal)
-                and key_event.modifiers() == Qt.ControlModifier
-            ):
+            elif key_event.key() in (Qt.Key_Plus, Qt.Key_Equal) and key_event.modifiers() == Qt.ControlModifier:
                 obj.zoomIn(1)
                 return True
-            elif (
-                key_event.key() == Qt.Key_Minus
-                and key_event.modifiers() == Qt.ControlModifier
-            ):
+            elif key_event.key() == Qt.Key_Minus and key_event.modifiers() == Qt.ControlModifier:
                 obj.zoomOut(1)
                 return True
-            elif (
-                key_event.key() == Qt.Key_G
-                and key_event.modifiers() == Qt.ControlModifier
-            ):
+            elif key_event.key() == Qt.Key_G and key_event.modifiers() == Qt.ControlModifier:
                 self.goto_line()
                 return True
-            elif (
-                key_event.key() == Qt.Key_F
-                and key_event.modifiers() == Qt.ControlModifier
-            ):
+            elif key_event.key() == Qt.Key_F and key_event.modifiers() == Qt.ControlModifier:
                 self.show_find_dialog()
                 return True
             elif key_event.key() == Qt.Key_Return and not self.hasFocus():
@@ -265,14 +247,11 @@ class TextEdit(QPlainTextEdit):
             True if the file was saved, False if cancelled.
         """
         if self.filename == "untitled.txt":
-            filename, _ = QFileDialog.getSaveFileName(
-                self, "Save As", "", "All Files (*.*)"
-            )
-            if filename is None:
+            filename, _ = QFileDialog.getSaveFileName(self, "Save As", "", "All Files (*.*)")
+            if not filename:
                 return False
-            else:
-                self.filename = filename
-                self.add_file_to_workspace.emit(filename)
+            self.filename = filename
+            self.add_file_to_workspace.emit(filename)
         if self.filename:
             with open(self.filename, "w") as code_file:
                 code_file.write(self.toPlainText())
@@ -349,7 +328,7 @@ class TextEdit(QPlainTextEdit):
         digits = 2
         count = max(1, self.blockCount())
         while count >= 10:
-            count /= 10
+            count //= 10
             digits += 1
         space = int(self.fontMetrics().averageCharWidth() * digits)
         return space + FOLD_ICON_WIDTH
@@ -371,9 +350,7 @@ class TextEdit(QPlainTextEdit):
         if dy:
             self.line_number_area.scroll(0, dy)
         else:
-            self.line_number_area.update(
-                0, rect.y(), self.line_number_area.width(), rect.height()
-            )
+            self.line_number_area.update(0, rect.y(), self.line_number_area.width(), rect.height())
         if rect.contains(self.viewport().rect()):
             self.update_line_number_area_width(0)
 
@@ -388,9 +365,7 @@ class TextEdit(QPlainTextEdit):
         super().resizeEvent(event)
         if self.show_line_numbers:
             cr = self.contentsRect()
-            self.line_number_area.setGeometry(
-                QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
-            )
+            self.line_number_area.setGeometry(QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height()))
 
     def lineNumberAreaPaintEvent(self, event: QPaintEvent) -> None:
         """Paint the line numbers in the margin area.
@@ -406,9 +381,7 @@ class TextEdit(QPlainTextEdit):
             mypainter.fillRect(event.rect(), QColor(43, 43, 43))
             block = self.firstVisibleBlock()
             blockNumber = block.blockNumber()
-            top = (
-                self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
-            )
+            top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
             bottom = top + self.blockBoundingRect(block).height()
             height = self.fontMetrics().height()
             number_area_width = self.line_number_area.width() - FOLD_ICON_WIDTH
@@ -424,9 +397,7 @@ class TextEdit(QPlainTextEdit):
                         mypainter.setBrush(QColor(60, 60, 60))
                         mypainter.drawRect(box)
                         mypainter.setPen(QColor(255, 255, 255))
-                        mypainter.drawText(
-                            box, Qt.AlignCenter, "+" if is_folded else "-"
-                        )
+                        mypainter.drawText(box, Qt.AlignCenter, "+" if is_folded else "-")
                     number = str(blockNumber + 1) + " "
                     mypainter.setPen(Qt.yellow)
                     mypainter.drawText(
@@ -481,9 +452,7 @@ class TextEdit(QPlainTextEdit):
         while self.find(text):
             self.found_count += 1
         if self.find_dialog:
-            self.find_dialog.items_found.setText(
-                f"{self.found_index} of {self.found_count}"
-            )
+            self.find_dialog.items_found.setText(f"{self.found_index} of {self.found_count}")
         self.moveCursor(QTextCursor.Start)
         self.find(text)
 
@@ -498,9 +467,7 @@ class TextEdit(QPlainTextEdit):
         if self.find(text):
             self.found_index += 1
             if self.find_dialog:
-                self.find_dialog.items_found.setText(
-                    f"{self.found_index} of {self.found_count}"
-                )
+                self.find_dialog.items_found.setText(f"{self.found_index} of {self.found_count}")
         else:
             self.moveCursor(QTextCursor.Start)
             self.found_index = 1
@@ -561,4 +528,3 @@ class TextEdit(QPlainTextEdit):
                 self.find_dialog.items_found.setText(f"Replaced {count} occurrences")
             else:
                 self.find_dialog.items_found.setText("no results found")
-

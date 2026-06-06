@@ -29,7 +29,9 @@ class SideBarModels(QObject):
         Switch the active sidebar model.
     """
 
-    def __init__(self, parent: Any = None, root_path: str = ".", editor_tab: Any = None) -> None:
+    def __init__(
+        self, parent: Any = None, root_path: str = ".", editor_tab: Any = None
+    ) -> None:
         """Initialise the three models and load icons.
 
         Parameters

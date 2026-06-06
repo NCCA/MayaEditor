@@ -4,7 +4,14 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Signal  # type: ignore
 from PySide6.QtGui import QIcon  # type: ignore
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QToolButton  # type: ignore
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QToolButton,
+)  # type: ignore
 
 if TYPE_CHECKING:
     from .TextEdit import TextEdit  # type: ignore

@@ -18,13 +18,16 @@ Owns QSettings persistence, font selection, and ruff-executable configuration.
 Keeps all QSettings I/O out of EditorDialogCore.
 """
 
+import logging
 from typing import Any
 
-from PySide6.QtCore import QDir, QSettings, QSize
+from PySide6.QtCore import QSettings, QSize
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog
 
 from .PythonTextEdit import PythonTextEdit
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsManager:
@@ -57,17 +60,13 @@ class SettingsManager:
         complex default values, so all casting is done manually.
         """
         try:
-            self._dialog.ui.editor_splitter.restoreState(
-                self._settings.value("splitter")
-            )
+            self._dialog.ui.editor_splitter.restoreState(self._settings.value("splitter"))
         except Exception:
-            pass
+            logger.debug("Failed to restore editor splitter state", exc_info=True)
         try:
-            self._dialog.ui.vertical_splitter.restoreState(
-                self._settings.value("vertical_splitter")
-            )
+            self._dialog.ui.vertical_splitter.restoreState(self._settings.value("vertical_splitter"))
         except Exception:
-            pass
+            logger.debug("Failed to restore vertical splitter state", exc_info=True)
         try:
             size = self._settings.value("size")
             if size is not None:
@@ -75,6 +74,7 @@ class SettingsManager:
             else:
                 self._dialog.resize(QSize(1024, 720))
         except Exception:
+            logger.debug("Failed to restore window size", exc_info=True)
             self._dialog.resize(QSize(1024, 720))
 
         # Load ruff executable BEFORE loading workspace files so that any
@@ -83,6 +83,7 @@ class SettingsManager:
             ruff_exe = self._settings.value("ruff_executable")
             self._ruff_executable = str(ruff_exe) if ruff_exe else ""
         except Exception:
+            logger.debug("Failed to read ruff executable from settings", exc_info=True)
             self._ruff_executable = ""
 
         try:
@@ -90,13 +91,13 @@ class SettingsManager:
             if workspace:
                 self._dialog.load_workspace_to_editor(workspace)
         except Exception:
-            pass
+            logger.debug("Failed to load workspace from settings", exc_info=True)
         try:
             root = self._settings.value("file_system_root")
             if root:
                 self._dialog.file_system_root = str(root)
         except Exception:
-            pass
+            logger.debug("Failed to load file system root from settings", exc_info=True)
 
         self._settings.beginGroup("Font")
         try:
@@ -106,6 +107,7 @@ class SettingsManager:
             _italic = self._settings.value("font-italic")
             italic = _italic in (True, "true", "True", "1", 1)
         except Exception:
+            logger.debug("Failed to read font settings; using defaults", exc_info=True)
             name, size, weight, italic = "Courier New", 12, 50, False
         self._settings.endGroup()
 
@@ -114,12 +116,8 @@ class SettingsManager:
 
     def save(self) -> None:
         """Save current editor settings to QSettings."""
-        self._settings.setValue(
-            "splitter", self._dialog.ui.editor_splitter.saveState()
-        )
-        self._settings.setValue(
-            "vertical_splitter", self._dialog.ui.vertical_splitter.saveState()
-        )
+        self._settings.setValue("splitter", self._dialog.ui.editor_splitter.saveState())
+        self._settings.setValue("vertical_splitter", self._dialog.ui.vertical_splitter.saveState())
         self._settings.setValue("size", self._dialog.size())
         self._settings.setValue("workspace", self._dialog.workspace.file_name)
         self._settings.setValue("file_system_root", self._dialog.file_system_root)
