@@ -1,0 +1,9 @@
+{
+    "name": "Sample Workspace",
+    "root": "/sample/project/root",
+    "files": [
+        "/sample/project/scripts/tool1.py",
+        "/sample/project/scripts/tool2.py",
+        "/sample/project/mel/commands.mel"
+    ]
+}

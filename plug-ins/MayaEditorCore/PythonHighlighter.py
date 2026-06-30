@@ -72,7 +72,23 @@ class PythonHighlighter(BaseHighlighter):
         "<<",
     ]
     braces: List[str] = ["\\{", "\\}", "\\(", "\\)", "\\[", "\\]"]
-    mayaCmds: List[str] = cmds.help("[a-z]*", list=True, lng="Python")
+    _mayaCmds: List[str] | None = None  # Cached Maya commands
+
+    @property
+    def mayaCmds(self) -> List[str]:
+        """Lazy-load Maya commands list on first access.
+
+        This avoids calling cmds.help() at class definition time,
+        which would fail before Maya standalone is initialized.
+        """
+        if PythonHighlighter._mayaCmds is None:
+            PythonHighlighter._mayaCmds = cmds.help("[a-z]*", list=True, lng="Python")
+        return PythonHighlighter._mayaCmds
+
+    @mayaCmds.setter
+    def mayaCmds(self, value: List[str]) -> None:
+        """Set Maya commands list (used by BaseHighlighter)."""
+        PythonHighlighter._mayaCmds = value
 
     def __init__(self, parent: Any = None) -> None:
         super().__init__(

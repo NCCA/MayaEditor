@@ -1,0 +1,36 @@
+// Sample MEL script for testing
+
+global proc string createTestCube() {
+    // Create a simple polygon cube
+    string $result[] = `polyCube -width 1 -height 1 -depth 1 -name "testCube"`;
+    return $result[0];
+}
+
+global proc string[] createMultipleSpheres(int $count) {
+    // Create multiple spheres in a row
+    string $spheres[];
+    int $i;
+
+    for ($i = 0; $i < $count; $i++) {
+        string $name = "sphere_" + $i;
+        string $sphere[] = `polySphere -radius 0.5 -name $name`;
+        $spheres[size($spheres)] = $sphere[0];
+
+        // Position spheres in a line
+        float $x = $i * 2.0;
+        move $x 0 0 $sphere[0];
+    }
+
+    return $spheres;
+}
+
+global proc testMelScript() {
+    // Main test procedure
+    print("Creating test geometry...\\n");
+
+    string $cube = createTestCube();
+    print("Created cube: " + $cube + "\\n");
+
+    string $spheres[] = createMultipleSpheres(5);
+    print("Created " + size($spheres) + " spheres\\n");
+}

@@ -1,0 +1,1 @@
+"""MayaEditor test suite."""
